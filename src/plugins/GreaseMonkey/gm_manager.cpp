@@ -27,6 +27,7 @@
 #include "javascript/externaljsobject.h"
 
 #include <QTimer>
+#include <iostream>
 #include <QDir>
 #include <QSettings>
 #include <QWebEngineProfile>

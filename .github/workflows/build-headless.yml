@@ -8,32 +8,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    container: debian:trixie
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            extra-cmake-modules ninja-build \
+          apt-get update
+          apt-get install -y git cmake ninja-build g++ \
+            extra-cmake-modules \
             qt6-base-dev qt6-base-dev-tools qt6-webengine-dev \
             qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools \
             qt6-5compat-dev \
             libkf6archive-dev libssl-dev
 
+      - uses: actions/checkout@v4
+
       - name: Configure
-        run: |
-          cmake -B build -S . -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=OFF
+        run: cmake -B build -S . -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
 
       - name: Headless render smoke test
         env:
-          # CI runner 无显示、无 user namespace：禁沙箱走 offscreen
+          # 容器无显示、user namespace 受限：禁沙箱走 offscreen
           QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --single-process"
           QT_QPA_PLATFORM: "offscreen"
         run: |

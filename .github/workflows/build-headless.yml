@@ -33,7 +33,7 @@ jobs:
       - name: Headless render smoke test
         env:
           # 容器无显示、user namespace 受限：禁沙箱走 offscreen
-          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --single-process"
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
           QT_QPA_PLATFORM: "offscreen"
         run: |
           FALCON_BIN=$(find build -type f -name falkon -perm -u+x | head -1)

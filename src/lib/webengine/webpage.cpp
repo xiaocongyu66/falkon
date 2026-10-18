@@ -16,32 +16,18 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "webpage.h"
-#include "tabbedwebview.h"
-#include "browserwindow.h"
 #include "pluginproxy.h"
-#include "downloadmanager.h"
 #include "mainapplication.h"
-#include "checkboxdialog.h"
 #include "qztools.h"
-#include "speeddial.h"
 #include "autofill.h"
-#include "popupwebview.h"
-#include "popupwindow.h"
 #include "iconprovider.h"
 #include "qzsettings.h"
 #include "useragentmanager.h"
 #include "delayedfilewatcher.h"
 #include "searchenginesmanager.h"
-#include "html5permissions/html5permissionsmanager.h"
 #include "sitesettingsmanager.h"
 #include "javascript/externaljsobject.h"
-#include "tabwidget.h"
 #include "networkmanager.h"
-#include "webhittestresult.h"
-#include "ui_jsconfirm.h"
-#include "ui_jsalert.h"
-#include "ui_jsprompt.h"
-#include "passwordmanager.h"
 #include "scripts.h"
 #include "ocssupport.h"
 #include "protocolhandlermanager.h"
@@ -49,19 +35,20 @@
 #include <iostream>
 
 #include <QDir>
-#include <QMouseEvent>
+#include <QFile>
+#include <QFileInfo>
 #include <QWebChannel>
 #include <QWebEngineHistory>
 #include <QWebEngineSettings>
+#include <QWebEngineView>
 #include <QTimer>
 #include <QDesktopServices>
-#include <QMessageBox>
-#include <QFileDialog>
 #include <QAuthenticator>
-#include <QPushButton>
 #include <QUrlQuery>
 #include <QWebEngineProfile>
 #include <QtWebEngineWidgetsVersion>
+#include <QPointer>
+#include <QEventLoop>
 
 #include <QWebEngineRegisterProtocolHandlerRequest>
 #include <QWebEngineNewWindowRequest>
@@ -72,14 +59,11 @@ QElapsedTimer WebPage::s_lastUnsupportedUrlTime;
 QStringList s_supportedSchemes;
 
 static const bool kEnableJsOutput = qEnvironmentVariableIsSet("FALKON_ENABLE_JS_OUTPUT");
-static const bool kEnableJsNonBlockDialogs = qEnvironmentVariableIsSet("FALKON_ENABLE_JS_NONBLOCK_DIALOGS");
 
 WebPage::WebPage(QObject* parent)
     : QWebEnginePage(mApp->webProfile(), parent)
     , m_fileWatcher(nullptr)
-    , m_runningLoop(nullptr)
     , m_loadProgress(100)
-    , m_blockAlerts(false)
     , m_secureStatus(false)
 {
     /* Custom background color while the page is loading */
@@ -99,14 +83,14 @@ WebPage::WebPage(QObject* parent)
     connect(this, &QWebEnginePage::certificateError, this, &WebPage::onCertificateError);
 
     connect(this, &QWebEnginePage::authenticationRequired, this, [this](const QUrl &url, QAuthenticator *auth) {
-        mApp->networkManager()->authentication(url, auth, view());
+        mApp->networkManager()->authentication(url, auth);
     });
 
     connect(this, &QWebEnginePage::proxyAuthenticationRequired, this, [this](const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
-        mApp->networkManager()->proxyAuthentication(proxyHost, auth, view());
+        mApp->networkManager()->proxyAuthentication(proxyHost, auth);
     });
 
-    // Workaround QWebEnginePage not scrolling to anchors when opened in background tab
+    // Scroll to #fragment once the document layout is known
     m_contentsResizedConnection = connect(this, &QWebEnginePage::contentsSizeChanged, this, [this]() {
         const QString fragment = url().fragment();
         if (!fragment.isEmpty()) {
@@ -119,10 +103,13 @@ WebPage::WebPage(QObject* parent)
         delete m_registerProtocolHandlerRequest;
         m_registerProtocolHandlerRequest = new QWebEngineRegisterProtocolHandlerRequest(request);
     });
-    connect(this, &QWebEnginePage::printRequested, this, &WebPage::printRequested);
     connect(this, &QWebEnginePage::selectClientCertificate, this, [this](QWebEngineClientCertificateSelection selection) {
-        // TODO: It should prompt user
-        selection.select(selection.certificates().at(0));
+        // Headless: no prompt, just pick the first certificate.
+        // Destroying the selection without select() rejects the request.
+        const auto certs = selection.certificates();
+        if (!certs.isEmpty()) {
+            selection.select(certs.at(0));
+        }
     });
     connect(this, &QWebEnginePage::newWindowRequested, this, &WebPage::onNewWindowRequested);
 }
@@ -130,36 +117,11 @@ WebPage::WebPage(QObject* parent)
 WebPage::~WebPage()
 {
     delete m_registerProtocolHandlerRequest;
-
-    if (m_runningLoop) {
-        m_runningLoop->exit(1);
-        m_runningLoop = nullptr;
-    }
 }
 
-WebView *WebPage::view() const
+QWebEngineView *WebPage::view() const
 {
-    return static_cast<WebView*>(QWebEngineView::forPage(this));
-}
-
-bool WebPage::execPrintPage(QPrinter *printer, int timeout)
-{
-    QPointer<QEventLoop> loop = new QEventLoop;
-    bool result = false;
-    QTimer::singleShot(timeout, loop.data(), &QEventLoop::quit);
-
-    connect(view(), &QWebEngineView::printFinished, this, [loop, &result](bool res) {
-        if (loop && loop->isRunning()) {
-            result = res;
-            loop->quit();
-        }
-    });
-    view()->print(printer);
-
-    loop->exec();
-    delete loop;
-
-    return result;
+    return QWebEngineView::forPage(this);
 }
 
 QVariant WebPage::execJavaScript(const QString &scriptSource, quint32 worldId, int timeout)
@@ -179,32 +141,6 @@ QVariant WebPage::execJavaScript(const QString &scriptSource, quint32 worldId, i
     delete loop;
 
     return result;
-}
-
-QPointF WebPage::mapToViewport(const QPointF &pos) const
-{
-    return QPointF(pos.x() / zoomFactor(), pos.y() / zoomFactor());
-}
-
-WebHitTestResult WebPage::hitTestContent(const QPoint &pos) const
-{
-    return WebHitTestResult(this, pos);
-}
-
-void WebPage::scroll(int x, int y)
-{
-    runJavaScript(QSL("window.scrollTo(window.scrollX + %1, window.scrollY + %2)").arg(x).arg(y), SafeJsWorld);
-}
-
-void WebPage::setScrollPosition(const QPointF &pos)
-{
-    const QPointF v = mapToViewport(pos.toPoint());
-    runJavaScript(QSL("window.scrollTo(%1, %2)").arg(v.x()).arg(v.y()), SafeJsWorld);
-}
-
-bool WebPage::isRunningLoop()
-{
-    return m_runningLoop;
 }
 
 bool WebPage::isLoading() const
@@ -256,22 +192,11 @@ void WebPage::removeSupportedScheme(const QString &scheme)
 void WebPage::urlChanged(const QUrl &url)
 {
     Q_UNUSED(url)
-
-    if (isLoading()) {
-        m_blockAlerts = false;
-    }
 }
 
 void WebPage::progress(int prog)
 {
     m_loadProgress = prog;
-
-    bool secStatus = url().scheme() == QL1S("https");
-
-    if (secStatus != m_secureStatus) {
-        m_secureStatus = secStatus;
-        Q_EMIT privacyChanged(secStatus);
-    }
 }
 
 void WebPage::finished()
@@ -328,39 +253,8 @@ void WebPage::handleUnknownProtocol(const QUrl &url)
         return;
     }
 
-    CheckBoxDialog dialog(QMessageBox::Yes | QMessageBox::No, view());
-    dialog.setDefaultButton(QMessageBox::Yes);
-
-    const QString wrappedUrl = QzTools::alignTextToWidth(url.toString(), QSL("<br/>"), dialog.fontMetrics(), 450);
-    const QString text = tr("Falkon cannot handle <b>%1:</b> links. The requested link "
-                            "is <ul><li>%2</li></ul>Do you want Falkon to try "
-                            "open this link in system application?").arg(protocol, wrappedUrl);
-
-    dialog.setText(text);
-    dialog.setCheckBoxText(tr("Remember my choice for this protocol"));
-    dialog.setWindowTitle(tr("External Protocol Request"));
-    dialog.setIcon(QMessageBox::Question);
-
-    switch (dialog.exec()) {
-    case QMessageBox::Yes:
-        if (dialog.isChecked()) {
-            qzSettings->autoOpenProtocols.append(protocol);
-            qzSettings->saveSettings();
-        }
-
-        desktopServicesOpen(url);
-        break;
-
-    case QMessageBox::No:
-        if (dialog.isChecked()) {
-            qzSettings->blockedProtocols.append(protocol);
-            qzSettings->saveSettings();
-        }
-        break;
-
-    default:
-        break;
-    }
+    // Headless: there is no user to ask about unknown protocols, ignore them.
+    qWarning() << "WebPage: ignoring unknown protocol" << protocol << url;
 }
 
 void WebPage::desktopServicesOpen(const QUrl &url)
@@ -381,29 +275,20 @@ void WebPage::desktopServicesOpen(const QUrl &url)
 
 void WebPage::windowCloseRequested()
 {
-    if (!view())
-        return;
-    view()->closeView();
+    // Headless: nothing to close, ignore the request
 }
 
 void WebPage::fullScreenRequested(QWebEngineFullScreenRequest fullScreenRequest)
 {
-    view()->requestFullScreen(fullScreenRequest.toggleOn());
-
-    const bool accepted = fullScreenRequest.toggleOn() == view()->isFullScreen();
-
-    if (accepted)
-        fullScreenRequest.accept();
-    else
-        fullScreenRequest.reject();
+    // Headless: never enter fullscreen
+    fullScreenRequest.reject();
 }
 
 void WebPage::featurePermissionRequested(const QUrl &origin, const QWebEnginePage::Feature &feature)
 {
-    if (feature == MouseLock && view()->isFullScreen())
-        setFeaturePermission(origin, feature, PermissionGrantedByUser);
-    else
-        mApp->html5PermissionsManager()->requestPermissions(this, origin, feature);
+    // Headless: no permission prompts, deny everything
+    Q_UNUSED(origin)
+    setFeaturePermission(origin, feature, PermissionDeniedByUser);
 }
 
 void WebPage::renderProcessTerminated(QWebEnginePage::RenderProcessTerminationStatus terminationStatus, int exitCode)
@@ -413,17 +298,7 @@ void WebPage::renderProcessTerminated(QWebEnginePage::RenderProcessTerminationSt
     if (terminationStatus == NormalTerminationStatus)
         return;
 
-    QTimer::singleShot(0, this, [this]() {
-        QString page = QzTools::readAllFileContents(QSL(":html/tabcrash.html"));
-        page.replace(QL1S("%IMAGE%"), QzTools::pixmapToDataUrl(IconProvider::standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45)).toString());
-        page.replace(QL1S("%TITLE%"), tr("Failed loading page"));
-        page.replace(QL1S("%HEADING%"), tr("Failed loading page"));
-        page.replace(QL1S("%LI-1%"), tr("Something went wrong while loading this page."));
-        page.replace(QL1S("%LI-2%"), tr("Try reloading the page or closing some tabs to make more memory available."));
-        page.replace(QL1S("%RELOAD-PAGE%"), tr("Reload page"));
-        page = QzTools::applyDirectionToPage(page);
-        setHtml(page, url());
-    });
+    qWarning() << "WebPage: render process terminated with status" << terminationStatus;
 }
 
 bool WebPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame)
@@ -511,7 +386,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::Navigatio
 void WebPage::onCertificateError(QWebEngineCertificateError error)
 {
     auto mutableError = const_cast<QWebEngineCertificateError&>(error);
-    if (mApp->networkManager()->certificateError(mutableError, view()))
+    if (mApp->networkManager()->certificateError(mutableError))
         mutableError.acceptCertificate();
     else
         mutableError.rejectCertificate();
@@ -523,94 +398,16 @@ void WebPage::onNewWindowRequested(QWebEngineNewWindowRequest &request)
         return;
     }
 
-    if (!request.isUserInitiated() && qzSettings->blockAutomaticPopups) {
-        return;
-    }
-
-    auto *tView = qobject_cast<TabbedWebView*>(view());
-    BrowserWindow *window = tView ? tView->browserWindow() : mApp->getWindow();
-
-    auto createTab = [=](Qz::NewTabPositionFlags pos) {
-        int index = window->tabWidget()->addView(QUrl(), pos);
-        TabbedWebView* view = window->weView(index);
-        view->setPage(new WebPage);
-        if (tView) {
-            tView->webTab()->addChildTab(view->webTab());
-        }
-        // Workaround focus issue when creating tab
-        if (pos.testFlag(Qz::NT_SelectedTab)) {
-            QPointer<TabbedWebView> pview = view;
-            pview->setFocus();
-            QTimer::singleShot(100, this, [pview]() {
-                if (pview && pview->webTab()->isCurrentTab()) {
-                    pview->setFocus();
-                }
-            });
-        }
-        return view->page();
-    };
-
-    switch (request.destination()) {
-    case QWebEngineNewWindowRequest::InNewWindow: {
-        BrowserWindow *window = mApp->createWindow(Qz::BW_NewWindow);
-        auto *page = new WebPage;
-        window->setStartPage(page);
-        request.openIn(page);
-        break;
-    }
-
-    case QWebEngineNewWindowRequest::InNewDialog:
-        if (!qzSettings->openPopupsInTabs) {
-            auto *view = new PopupWebView;
-            view->setPage(new WebPage);
-            auto *popup = new PopupWindow(view);
-            popup->show();
-            window->addDeleteOnCloseWidget(popup);
-            request.openIn(view->page());
-            break;
-        }
-        // else fallthrough
-
-    case QWebEngineNewWindowRequest::InNewTab:
-        request.openIn(createTab(Qz::NT_CleanSelectedTab));
-        break;
-
-    case QWebEngineNewWindowRequest::InNewBackgroundTab:
-        request.openIn(createTab(Qz::NT_CleanNotSelectedTab));
-        break;
-
-    default:
-        break;
-    }
+    // Headless: there are no tabs/windows to open the request in, deny it.
+    qWarning() << "WebPage: denying new window request for" << request.requestedUrl();
 }
 
 QStringList WebPage::chooseFiles(QWebEnginePage::FileSelectionMode mode, const QStringList &oldFiles, const QStringList &acceptedMimeTypes)
 {
-    Q_UNUSED(acceptedMimeTypes);
-
-    QStringList files;
-    QString suggestedFileName = s_lastUploadLocation;
-    if (!oldFiles.isEmpty())
-        suggestedFileName = oldFiles.at(0);
-
-    switch (mode) {
-    case FileSelectOpen:
-        files = QStringList(QzTools::getOpenFileName(QSL("WebPage-ChooseFile"), view(), tr("Choose file..."), suggestedFileName));
-        break;
-
-    case FileSelectOpenMultiple:
-        files = QzTools::getOpenFileNames(QSL("WebPage-ChooseFile"), view(), tr("Choose files..."), suggestedFileName);
-        break;
-
-    default:
-        files = QWebEnginePage::chooseFiles(mode, oldFiles, acceptedMimeTypes);
-        break;
-    }
-
-    if (!files.isEmpty())
-        s_lastUploadLocation = files.at(0);
-
-    return files;
+    // Headless: no file dialogs, keep current selection untouched.
+    Q_UNUSED(mode)
+    Q_UNUSED(acceptedMimeTypes)
+    return oldFiles;
 }
 
 QStringList WebPage::autoFillUsernames() const
@@ -636,148 +433,27 @@ QString WebPage::registerProtocolHandlerRequestScheme() const
 
 bool WebPage::javaScriptPrompt(const QUrl &securityOrigin, const QString &msg, const QString &defaultValue, QString* result)
 {
-    if (!kEnableJsNonBlockDialogs) {
-        return QWebEnginePage::javaScriptPrompt(securityOrigin, msg, defaultValue, result);
-    }
-
-    if (m_runningLoop) {
-        return false;
-    }
-
-    auto *widget = new QFrame(view()->overlayWidget());
-
-    widget->setObjectName("jsFrame");
-    auto* ui = new Ui_jsPrompt();
-    ui->setupUi(widget);
-    ui->message->setText(msg);
-    ui->lineEdit->setText(defaultValue);
-    ui->lineEdit->setFocus();
-    widget->resize(view()->size());
-    widget->show();
-
-    QAbstractButton *clicked = nullptr;
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, this, [&](QAbstractButton *button) {
-        clicked = button;
-    });
-
-    connect(view(), &WebView::viewportResized, widget, QOverload<const QSize &>::of(&QFrame::resize));
-    connect(ui->lineEdit, SIGNAL(returnPressed()), ui->buttonBox->button(QDialogButtonBox::Ok), SLOT(animateClick()));
-
-    QEventLoop eLoop;
-    m_runningLoop = &eLoop;
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, &eLoop, &QEventLoop::quit);
-
-    if (eLoop.exec() == 1) {
-        return result;
-    }
-    m_runningLoop = nullptr;
-
-    QString x = ui->lineEdit->text();
-    bool _result = ui->buttonBox->buttonRole(clicked) == QDialogButtonBox::AcceptRole;
-    *result = x;
-
-    delete widget;
-    view()->setFocus();
-
-    return _result;
+    // Headless: no modal dialogs, cancel the prompt.
+    Q_UNUSED(securityOrigin)
+    Q_UNUSED(msg)
+    Q_UNUSED(defaultValue)
+    Q_UNUSED(result)
+    return false;
 }
 
 bool WebPage::javaScriptConfirm(const QUrl &securityOrigin, const QString &msg)
 {
-    if (!kEnableJsNonBlockDialogs) {
-        return QWebEnginePage::javaScriptConfirm(securityOrigin, msg);
-    }
-
-    if (m_runningLoop) {
-        return false;
-    }
-
-    auto *widget = new QFrame(view()->overlayWidget());
-
-    widget->setObjectName("jsFrame");
-    auto* ui = new Ui_jsConfirm();
-    ui->setupUi(widget);
-    ui->message->setText(msg);
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
-    widget->resize(view()->size());
-    widget->show();
-
-    QAbstractButton *clicked = nullptr;
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, this, [&](QAbstractButton *button) {
-        clicked = button;
-    });
-
-    connect(view(), &WebView::viewportResized, widget, QOverload<const QSize &>::of(&QFrame::resize));
-
-    QEventLoop eLoop;
-    m_runningLoop = &eLoop;
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, &eLoop, &QEventLoop::quit);
-
-    if (eLoop.exec() == 1) {
-        return false;
-    }
-    m_runningLoop = nullptr;
-
-    bool result = ui->buttonBox->buttonRole(clicked) == QDialogButtonBox::AcceptRole;
-
-    delete widget;
-    view()->setFocus();
-
-    return result;
+    // Headless: no modal dialogs, cancel the confirmation.
+    Q_UNUSED(securityOrigin)
+    qWarning() << "WebPage: unhandled confirm():" << msg;
+    return false;
 }
 
 void WebPage::javaScriptAlert(const QUrl &securityOrigin, const QString &msg)
 {
+    // Headless: no modal dialogs, ignore alerts.
     Q_UNUSED(securityOrigin)
-
-    if (m_blockAlerts || m_runningLoop) {
-        return;
-    }
-
-    if (!kEnableJsNonBlockDialogs) {
-        QString title = tr("JavaScript alert");
-        if (!url().host().isEmpty()) {
-            title.append(QSL(" - %1").arg(url().host()));
-        }
-
-        CheckBoxDialog dialog(QMessageBox::Ok, view());
-        dialog.setDefaultButton(QMessageBox::Ok);
-        dialog.setWindowTitle(title);
-        dialog.setText(msg);
-        dialog.setCheckBoxText(tr("Prevent this page from creating additional dialogs"));
-        dialog.setIcon(QMessageBox::Information);
-        dialog.exec();
-
-        m_blockAlerts = dialog.isChecked();
-        return;
-    }
-
-    auto *widget = new QFrame(view()->overlayWidget());
-
-    widget->setObjectName("jsFrame");
-    auto* ui = new Ui_jsAlert();
-    ui->setupUi(widget);
-    ui->message->setText(msg);
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
-    widget->resize(view()->size());
-    widget->show();
-
-    connect(view(), &WebView::viewportResized, widget, QOverload<const QSize &>::of(&QFrame::resize));
-
-    QEventLoop eLoop;
-    m_runningLoop = &eLoop;
-    connect(ui->buttonBox, &QDialogButtonBox::clicked, &eLoop, &QEventLoop::quit);
-
-    if (eLoop.exec() == 1) {
-        return;
-    }
-    m_runningLoop = nullptr;
-
-    m_blockAlerts = ui->preventAlerts->isChecked();
-
-    delete widget;
-
-    view()->setFocus();
+    qWarning() << "WebPage: unhandled alert():" << msg;
 }
 
 void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber, const QString &sourceID)

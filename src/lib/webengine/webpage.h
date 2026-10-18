@@ -20,21 +20,19 @@
 
 #include <QWebEnginePage>
 #include <QWebEngineScript>
-#include <QWebEngineFullScreenRequest>
-#include <QPrinter>
 #include <QVector>
 #include <QElapsedTimer>
 
 #include "qzcommon.h"
 
-class QEventLoop;
-class QWebEngineDownloadItem;
+class QWebEngineView;
 class QWebEngineRegisterProtocolHandlerRequest;
 
-class WebView;
-class WebHitTestResult;
 class DelayedFileWatcher;
 
+// Headless fork: WebPage keeps Falkon's navigation bookkeeping (adblock
+// interplay, per-site settings, autofill) but all widget-level behavior
+// (context menus, tabs, dialogs, printing) is gone.
 class FALKON_EXPORT WebPage : public QWebEnginePage
 {
     Q_OBJECT
@@ -48,16 +46,9 @@ public:
     explicit WebPage(QObject* parent = nullptr);
     ~WebPage() override;
 
-    WebView *view() const;
+    QWebEngineView *view() const;
 
-    bool execPrintPage(QPrinter *printer, int timeout = 1000);
     QVariant execJavaScript(const QString &scriptSource, quint32 worldId = UnsafeJsWorld, int timeout = 500);
-
-    QPointF mapToViewport(const QPointF &pos) const;
-    WebHitTestResult hitTestContent(const QPoint &pos) const;
-
-    void scroll(int x, int y);
-    void setScrollPosition(const QPointF &pos);
 
     bool javaScriptPrompt(const QUrl &securityOrigin, const QString &msg, const QString &defaultValue, QString* result) override;
     bool javaScriptConfirm(const QUrl &securityOrigin, const QString &msg) override;
@@ -69,8 +60,6 @@ public:
     QUrl registerProtocolHandlerRequestUrl() const;
     QString registerProtocolHandlerRequestScheme() const;
 
-    bool isRunningLoop();
-
     bool isLoading() const;
 
     static QStringList internalSchemes();
@@ -79,8 +68,6 @@ public:
     static void removeSupportedScheme(const QString &scheme);
 
 Q_SIGNALS:
-    void privacyChanged(bool status);
-    void printRequested();
     void navigationRequestAccepted(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame);
 
 protected Q_SLOTS:
@@ -110,18 +97,14 @@ private:
     static QElapsedTimer s_lastUnsupportedUrlTime;
 
     DelayedFileWatcher* m_fileWatcher;
-    QEventLoop* m_runningLoop;
 
     QStringList m_autoFillUsernames;
     QWebEngineRegisterProtocolHandlerRequest *m_registerProtocolHandlerRequest = nullptr;
 
     int m_loadProgress;
-    bool m_blockAlerts;
     bool m_secureStatus;
 
     QMetaObject::Connection m_contentsResizedConnection;
-
-    friend class WebView;
 };
 
 #endif // WEBPAGE_H

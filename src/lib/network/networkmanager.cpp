@@ -23,19 +23,12 @@
 #include "acceptlanguage.h"
 #include "mainapplication.h"
 #include "passwordmanager.h"
-#include "sslerrordialog.h"
 #include "networkurlinterceptor.h"
 #include "schemehandlers/falkonschemehandler.h"
 #include "schemehandlers/extensionschemehandler.h"
 #include "webpage.h"
 
-#include <QLabel>
-#include <QDialog>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QFormLayout>
 #include <QAuthenticator>
-#include <QDialogButtonBox>
 #include <QNetworkReply>
 #include <QNetworkProxy>
 #include <QWebEngineProfile>
@@ -70,7 +63,7 @@ NetworkManager::NetworkManager(QObject *parent)
     });
 }
 
-bool NetworkManager::certificateError(QWebEngineCertificateError &error, QWidget *parent)
+bool NetworkManager::certificateError(QWebEngineCertificateError &error)
 {
     const QString &host = error.url().host();
     const auto errorType = error.type();
@@ -84,121 +77,33 @@ bool NetworkManager::certificateError(QWebEngineCertificateError &error, QWidget
         return true;
     }
 
-    // Defer loading the URL until the user prompt has completed.
-    if (error.isOverridable())
-        error.defer();
+    // Headless: there is no user to approve an invalid certificate.
+    qWarning() << "NetworkManager: rejecting SSL certificate error for" << host
+               << sslErrorDescription(errorType);
 
-    QString title = tr("SSL Certificate Error!");
-    QString text1 = tr("The page <strong>%1</strong> you are trying to access has the following errors in the SSL certificate:").arg(host);
-    QString text2 = tr("Would you like to make an exception for this certificate?");
-
-    const auto errorDescription = error.description();
-    QString message = QSL("<b>%1</b><p>%2</p><ul><li>%3</li></ul><p>%4</p>").arg(title, text1, errorDescription, text2);
-
-    SslErrorDialog dialog(parent);
-    dialog.setText(message);
-    dialog.setCertificateChain(error.certificateChain());
-    dialog.exec();
-
-    switch (dialog.result()) {
-    case SslErrorDialog::Yes:
-        m_ignoredSslHosts.append(host);
-        saveIgnoredSslHosts();
-        return true;
-
-    case SslErrorDialog::OnlyForThisSession:
-        m_ignoredSslErrors[host] = errorType;
-        return true;
-
-    case SslErrorDialog::NoForThisSession:
-        m_rejectedSslErrors[host] = errorType;
-        return false;
-
-    default:
-        return false;
-    }
+    return false;
 }
 
-void NetworkManager::authentication(const QUrl &url, QAuthenticator *auth, QWidget *parent)
+void NetworkManager::authentication(const QUrl &url, QAuthenticator *auth)
 {
-    auto* dialog = new QDialog(parent);
-    dialog->setWindowTitle(tr("Authorization required"));
-
-    auto* formLa = new QFormLayout(dialog);
-
-    auto* label = new QLabel(dialog);
-    auto* userLab = new QLabel(dialog);
-    auto* passLab = new QLabel(dialog);
-    userLab->setText(tr("Username: "));
-    passLab->setText(tr("Password: "));
-
-    auto* user = new QLineEdit(dialog);
-    auto* pass = new QLineEdit(dialog);
-    pass->setEchoMode(QLineEdit::Password);
-    auto* save = new QCheckBox(dialog);
-    save->setText(tr("Save username and password for this site"));
-
-    auto* box = new QDialogButtonBox(dialog);
-    box->addButton(QDialogButtonBox::Ok);
-    box->addButton(QDialogButtonBox::Cancel);
-    connect(box, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-    connect(box, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-
-    label->setText(tr("A username and password are being requested by %1. "
-                      "The site says: \"%2\"").arg(url.host(), auth->realm().toHtmlEscaped()));
-
-    formLa->addRow(label);
-    formLa->addRow(userLab, user);
-    formLa->addRow(passLab, pass);
-    formLa->addRow(save);
-    formLa->addWidget(box);
-
+    // Headless: no credentials prompt. Try stored autofill credentials,
+    // otherwise cancel the authentication.
     AutoFill* fill = mApp->autoFill();
-    QString storedUser;
-    QString storedPassword;
-    bool shouldUpdateEntry = false;
 
     if (fill->isStored(url)) {
         const QVector<PasswordEntry> &data = fill->getFormData(url);
         if (!data.isEmpty()) {
-            save->setChecked(true);
-            shouldUpdateEntry = true;
-            storedUser = data.at(0).username;
-            storedPassword = data.at(0).password;
-            user->setText(storedUser);
-            pass->setText(storedPassword);
+            auth->setUser(data.at(0).username);
+            auth->setPassword(data.at(0).password);
+            return;
         }
     }
 
-    // Do not save when private browsing is enabled
-    if (mApp->isPrivate()) {
-        save->setVisible(false);
-    }
-
-    if (dialog->exec() != QDialog::Accepted) {
-        *auth = QAuthenticator();
-        delete dialog;
-        return;
-    }
-
-    auth->setUser(user->text());
-    auth->setPassword(pass->text());
-
-    if (save->isChecked()) {
-        if (shouldUpdateEntry) {
-            if (storedUser != user->text() || storedPassword != pass->text()) {
-                fill->updateEntry(url, user->text(), pass->text());
-            }
-        }
-        else {
-            fill->addEntry(url, user->text(), pass->text());
-        }
-    }
-
-    delete dialog;
+    qWarning() << "NetworkManager: no stored credentials for" << url.host() << ", cancelling HTTP authentication";
+    *auth = QAuthenticator();
 }
 
-void NetworkManager::proxyAuthentication(const QString &proxyHost, QAuthenticator *auth, QWidget *parent)
+void NetworkManager::proxyAuthentication(const QString &proxyHost, QAuthenticator *auth)
 {
     const QNetworkProxy proxy = QNetworkProxy::applicationProxy();
     if (!proxy.user().isEmpty() && !proxy.password().isEmpty()) {
@@ -207,43 +112,8 @@ void NetworkManager::proxyAuthentication(const QString &proxyHost, QAuthenticato
         return;
     }
 
-    auto* dialog = new QDialog(parent);
-    dialog->setWindowTitle(tr("Proxy authorization required"));
-
-    auto* formLa = new QFormLayout(dialog);
-
-    auto* label = new QLabel(dialog);
-    auto* userLab = new QLabel(dialog);
-    auto* passLab = new QLabel(dialog);
-    userLab->setText(tr("Username: "));
-    passLab->setText(tr("Password: "));
-
-    auto* user = new QLineEdit(dialog);
-    auto* pass = new QLineEdit(dialog);
-    pass->setEchoMode(QLineEdit::Password);
-
-    auto* box = new QDialogButtonBox(dialog);
-    box->addButton(QDialogButtonBox::Ok);
-    box->addButton(QDialogButtonBox::Cancel);
-    connect(box, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-    connect(box, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-
-    label->setText(tr("A username and password are being requested by proxy %1. ").arg(proxyHost));
-    formLa->addRow(label);
-    formLa->addRow(userLab, user);
-    formLa->addRow(passLab, pass);
-    formLa->addWidget(box);
-
-    if (dialog->exec() != QDialog::Accepted) {
-        *auth = QAuthenticator();
-        delete dialog;
-        return;
-    }
-
-    auth->setUser(user->text());
-    auth->setPassword(pass->text());
-
-    delete dialog;
+    qWarning() << "NetworkManager: no credentials for proxy" << proxyHost << ", cancelling proxy authentication";
+    *auth = QAuthenticator();
 }
 
 void NetworkManager::installUrlInterceptor(UrlInterceptor *interceptor)

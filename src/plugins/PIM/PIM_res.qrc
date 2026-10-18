@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/PIM">
-        <file>data/PIM.png</file>
-    </qresource>
-</RCC>

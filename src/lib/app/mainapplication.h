@@ -1,5 +1,5 @@
 /* ============================================================
-* Falkon - Qt web browser
+* Falkon - Qt web browser (headless render fork)
 * Copyright (C) 2010-2018 David Rosca <nowrep@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
@@ -21,84 +21,43 @@
 #define mApp MainApplication::instance()
 
 #include <QList>
-#include <QPointer>
 
 #include "qtsingleapplication/qtsingleapplication.h"
-#include "restoremanager.h"
 #include "qzcommon.h"
 
-class QMenu;
 class QWebEngineProfile;
 class QWebEngineSettings;
-class QNetworkAccessManager;
 class QWebEngineDownloadRequest;
 
 class History;
 class AutoFill;
-class MainMenu;
 class Bookmarks;
 class CookieJar;
-class AutoSaver;
 class PluginProxy;
-class BrowserWindow;
 class NetworkManager;
-class BrowsingLibrary;
-class DownloadManager;
 class UserAgentManager;
 class SearchEnginesManager;
-class HTML5PermissionsManager;
-class RegisterQAppAssociation;
-class DesktopNotificationsFactory;
-class ProxyStyle;
-class SessionManager;
-class ClosedWindowsManager;
 class ProtocolHandlerManager;
 class SiteSettingsManager;
 
+// Headless-only application: no browser windows, no sessions, no downloads UI.
+// The sole job is runHeadlessRender() - load a URL, wait for readiness,
+// grab the view and exit with a status code.
 class FALKON_EXPORT MainApplication : public QtSingleApplication
 {
     Q_OBJECT
 
 public:
-    enum AfterLaunch {
-        OpenBlankPage = 0,
-        OpenHomePage = 1,
-        OpenSpeedDial = 2,
-        RestoreSession = 3,
-        SelectSession = 4
-    };
-
     explicit MainApplication(int &argc, char** argv);
-    ~MainApplication();
-
-    bool event(QEvent* e) override;
+    ~MainApplication() override;
 
     void setChromiumFlags();
 
     bool isClosing() const;
     bool isPrivate() const;
     bool isPortable() const;
-    bool isStartingAfterCrash() const;
 
-    int windowCount() const;
-    QList<BrowserWindow*> windows() const;
-
-    BrowserWindow* getWindow() const;
-    BrowserWindow* createWindow(Qz::BrowserWindowType type, const QUrl &startUrl);
-    BrowserWindow* createWindow(Qz::BrowserWindowType type, const QList<QUrl> &startUrls = {});
-
-    AfterLaunch afterLaunch() const;
-
-    void openSession(BrowserWindow* window, RestoreData &restoreData);
-    bool restoreSession(BrowserWindow* window, RestoreData restoreData);
-    void destroyRestoreManager();
     void reloadSettings();
-
-    // Name of current Qt style
-    QString styleName() const;
-    void setProxyStyle(ProxyStyle *style);
-
-    QByteArray wmClass() const;
 
     History* history();
     Bookmarks* bookmarks();
@@ -106,23 +65,14 @@ public:
     AutoFill* autoFill();
     CookieJar* cookieJar();
     PluginProxy* plugins();
-    BrowsingLibrary* browsingLibrary();
 
     NetworkManager* networkManager();
-    RestoreManager* restoreManager();
-    SessionManager* sessionManager();
-    DownloadManager* downloadManager();
     UserAgentManager* userAgentManager();
     SearchEnginesManager* searchEnginesManager();
-    ClosedWindowsManager* closedWindowsManager();
     ProtocolHandlerManager *protocolHandlerManager();
-    HTML5PermissionsManager* html5PermissionsManager();
     SiteSettingsManager* siteSettingsManager();
-    DesktopNotificationsFactory* desktopNotifications();
     QWebEngineProfile* webProfile() const;
     QWebEngineSettings *webSettings() const;
-
-    QByteArray saveState() const;
 
     static MainApplication* instance();
 
@@ -130,47 +80,22 @@ public:
     static void setTestModeEnabled(bool enabled);
 
 public Q_SLOTS:
-    void addNewTab(const QUrl &url = QUrl());
-    void startPrivateBrowsing(const QUrl &startUrl = QUrl());
-
     void reloadUserStyleSheet();
-    void restoreOverrideCursor();
-
-    void changeOccurred();
-    void quitApplication();
 
 Q_SIGNALS:
     void settingsReloaded();
-    void activeWindowChanged(BrowserWindow* window);
-    void systemThemeChanged();
 
 private Q_SLOTS:
-    void postLaunch();
-
     void saveSettings();
-
     void messageReceived(const QString &message);
-    void windowDestroyed(QObject* window);
-    void onFocusChanged();
-    void runDeferredPostLaunchActions();
-
-    void downloadRequested(QWebEngineDownloadRequest *download);
 
 private:
-    enum PostLaunchAction {
-        OpenDownloadManager,
-        OpenNewTab,
-        ToggleFullScreen
-    };
-
     void loadSettings();
-    void loadTheme(const QString &name);
+
+    bool setupWebEngineProfile(const QString &startProfile);
 
     void setupUserScripts();
     void setUserStyleSheet(const QString &filePath);
-
-    void checkDefaultWebBrowser();
-    void checkOptimizeDatabase();
 
     void registerAllowedSchemes();
     void initNetworkInformation();
@@ -190,40 +115,13 @@ private:
     AutoFill* m_autoFill;
     CookieJar* m_cookieJar;
     PluginProxy* m_plugins;
-    BrowsingLibrary* m_browsingLibrary;
 
     NetworkManager* m_networkManager;
-    RestoreManager* m_restoreManager;
-    SessionManager* m_sessionManager;
-    DownloadManager* m_downloadManager;
     UserAgentManager* m_userAgentManager;
     SearchEnginesManager* m_searchEnginesManager;
-    ClosedWindowsManager* m_closedWindowsManager;
     ProtocolHandlerManager *m_protocolHandlerManager;
-    HTML5PermissionsManager* m_html5PermissionsManager;
     SiteSettingsManager* m_siteSettingsManager;
-    DesktopNotificationsFactory* m_desktopNotifications;
     QWebEngineProfile* m_webProfile;
-
-    AutoSaver* m_autoSaver;
-    ProxyStyle *m_proxyStyle = nullptr;
-
-    QByteArray m_wmClass;
-
-    QList<BrowserWindow*> m_windows;
-    QPointer<BrowserWindow> m_lastActiveWindow;
-
-    QList<PostLaunchAction> m_postLaunchActions;
-
-    void initPulseSupport();
-
-#if defined(Q_OS_WIN) && !defined(Q_OS_OS2)
-public:
-    RegisterQAppAssociation* associationManager();
-
-private:
-    RegisterQAppAssociation* m_registerQAppAssociation;
-#endif
 };
 
 #endif // MAINAPPLICATION_H

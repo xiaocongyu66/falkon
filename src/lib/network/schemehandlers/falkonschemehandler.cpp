@@ -18,16 +18,9 @@
 * ============================================================ */
 #include "falkonschemehandler.h"
 #include "qztools.h"
-#include "browserwindow.h"
 #include "mainapplication.h"
-#include "speeddial.h"
-#include "pluginproxy.h"
-#include "plugininterface.h"
 #include "settings.h"
 #include "datapaths.h"
-#include "iconprovider.h"
-#include "sessionmanager.h"
-#include "restoremanager.h"
 #include "../config.h"
 
 #include <QTimer>
@@ -60,7 +53,7 @@ void FalkonSchemeHandler::requestStarted(QWebEngineUrlRequestJob *job)
     }
 
     QStringList knownPages;
-    knownPages << QSL("about") << QSL("start") << QSL("speeddial") << QSL("config") << QSL("restore");
+    knownPages << QSL("about") << QSL("start") << QSL("config");
 
     if (knownPages.contains(job->requestUrl().path()))
         job->reply(QByteArrayLiteral("text/html"), new FalkonSchemeReply(job, job));
@@ -70,19 +63,7 @@ void FalkonSchemeHandler::requestStarted(QWebEngineUrlRequestJob *job)
 
 bool FalkonSchemeHandler::handleRequest(QWebEngineUrlRequestJob *job)
 {
-    QUrlQuery query(job->requestUrl());
-    if (!query.isEmpty() && job->requestUrl().path() == QL1S("restore")) {
-        if (mApp->restoreManager()) {
-            if (query.hasQueryItem(QSL("new-session"))) {
-                mApp->restoreManager()->clearRestoreData();
-            } else if (query.hasQueryItem(QSL("restore-session"))) {
-                mApp->restoreSession(nullptr, mApp->restoreManager()->restoreData());
-            }
-        }
-        mApp->destroyRestoreManager();
-        job->redirect(QUrl(QSL("falkon:start")));
-        return true;
-    } else if (job->requestUrl().path() == QL1S("reportbug")) {
+    if (job->requestUrl().path() == QL1S("reportbug")) {
         job->redirect(QUrl(QString::fromLatin1(Qz::BUGSADDRESS)));
         return true;
     }
@@ -110,12 +91,8 @@ void FalkonSchemeReply::loadPage()
         contents = aboutPage();
     } else if (m_pageName == QLatin1String("start")) {
         contents = startPage();
-    } else if (m_pageName == QLatin1String("speeddial")) {
-        contents = speeddialPage();
     } else if (m_pageName == QLatin1String("config")) {
         contents = configPage();
-    } else if (m_pageName == QLatin1String("restore")) {
-        contents = restorePage();
     }
 
     QMutexLocker lock(&m_mutex);
@@ -208,87 +185,6 @@ QString FalkonSchemeReply::aboutPage()
     return aPage;
 }
 
-QString FalkonSchemeReply::speeddialPage()
-{
-    static QString dPage;
-
-    if (dPage.isEmpty()) {
-        dPage.append(QzTools::readAllFileContents(QSL(":html/speeddial.html")));
-        dPage.replace(QLatin1String("%IMG_PLUS%"), QLatin1String("qrc:html/plus.svg"));
-        dPage.replace(QLatin1String("%IMG_CLOSE%"), QLatin1String("qrc:html/close.svg"));
-        dPage.replace(QLatin1String("%IMG_EDIT%"), QLatin1String("qrc:html/edit.svg"));
-        dPage.replace(QLatin1String("%IMG_RELOAD%"), QLatin1String("qrc:html/reload.svg"));
-        dPage.replace(QLatin1String("%LOADING-IMG%"), QLatin1String("qrc:html/loading.gif"));
-        dPage.replace(QLatin1String("%IMG_SETTINGS%"), QLatin1String("qrc:html/configure.svg"));
-
-        dPage.replace(QLatin1String("%SITE-TITLE%"), tr("Speed Dial"));
-        dPage.replace(QLatin1String("%ADD-TITLE%"), tr("Add New Page"));
-        dPage.replace(QLatin1String("%TITLE-EDIT%"), tr("Edit"));
-        dPage.replace(QLatin1String("%TITLE-REMOVE%"), tr("Remove"));
-        dPage.replace(QLatin1String("%TITLE-RELOAD%"), tr("Reload"));
-        dPage.replace(QLatin1String("%TITLE-WARN%"), tr("Are you sure you want to remove this speed dial?"));
-        dPage.replace(QLatin1String("%TITLE-WARN-REL%"), tr("Are you sure you want to reload all speed dials?"));
-        dPage.replace(QLatin1String("%TITLE-FETCHTITLE%"), tr("Load title from page"));
-        dPage.replace(QLatin1String("%JAVASCRIPT-DISABLED%"), tr("SpeedDial requires enabled JavaScript."));
-        dPage.replace(QLatin1String("%URL%"), tr("Url"));
-        dPage.replace(QLatin1String("%TITLE%"), tr("Title"));
-        dPage.replace(QLatin1String("%APPLY%"), tr("Apply"));
-        dPage.replace(QLatin1String("%CANCEL%"), tr("Cancel"));
-        dPage.replace(QLatin1String("%NEW-PAGE%"), tr("New Page"));
-        dPage.replace(QLatin1String("%SETTINGS-TITLE%"), tr("Speed Dial settings"));
-        dPage.replace(QLatin1String("%TXT_PLACEMENT%"), tr("Placement: "));
-        dPage.replace(QLatin1String("%TXT_AUTO%"), tr("Auto"));
-        dPage.replace(QLatin1String("%TXT_COVER%"), tr("Cover"));
-        dPage.replace(QLatin1String("%TXT_FIT%"), tr("Fit"));
-        dPage.replace(QLatin1String("%TXT_FWIDTH%"), tr("Fit Width"));
-        dPage.replace(QLatin1String("%TXT_FHEIGHT%"), tr("Fit Height"));
-        dPage.replace(QLatin1String("%TXT_NOTE%"), tr("Use custom wallpaper"));
-        dPage.replace(QLatin1String("%TXT_SELECTIMAGE%"), tr("Click to select image"));
-        dPage.replace(QLatin1String("%TXT_NRROWS%"), tr("Maximum pages in a row:"));
-        dPage.replace(QLatin1String("%TXT_SDSIZE%"), tr("Change size of pages:"));
-        dPage.replace(QLatin1String("%TXT_CNTRDLS%"), tr("Center speed dials"));
-        dPage.replace(QLatin1String("%TXT_LOCKDIALS%"), tr("Lock the position of SpeedDial entries."));
-        dPage = QzTools::applyDirectionToPage(dPage);
-    }
-
-    QString page = dPage;
-    SpeedDial* dial = mApp->plugins()->speedDial();
-
-    page.replace(QLatin1String("%INITIAL-SCRIPT%"), QString::fromLatin1(dial->initialScript().toUtf8().toBase64()));
-    page.replace(QLatin1String("%IMG_BACKGROUND%"), dial->backgroundImage());
-    page.replace(QLatin1String("%URL_BACKGROUND%"), dial->backgroundImageUrl());
-    page.replace(QLatin1String("%B_SIZE%"), dial->backgroundImageSize());
-    page.replace(QLatin1String("%ROW-PAGES%"), QString::number(dial->pagesInRow()));
-    page.replace(QLatin1String("%SD-SIZE%"), QString::number(dial->sdSize()));
-    page.replace(QLatin1String("%SD-CENTER%"), dial->sdCenter() ? QSL("true") : QSL("false"));
-    page.replace(QLatin1String("%LOCK-DIALS%"), dial->lockDials() ? QSL("true") : QSL("false"));
-
-    return page;
-}
-
-QString FalkonSchemeReply::restorePage()
-{
-    static QString rPage;
-
-    if (rPage.isEmpty()) {
-        rPage.append(QzTools::readAllFileContents(QSL(":html/restore.html")));
-        rPage.replace(QLatin1String("%IMAGE%"), QzTools::pixmapToDataUrl(IconProvider::standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45)).toString());
-        rPage.replace(QLatin1String("%TITLE%"), tr("Restore Session"));
-        rPage.replace(QLatin1String("%OOPS%"), tr("Oops, Falkon crashed."));
-        rPage.replace(QLatin1String("%APOLOGIZE%"), tr("We apologize for this. Would you like to restore the last saved state?"));
-        rPage.replace(QLatin1String("%TRY-REMOVING%"), tr("Try removing one or more tabs that you think cause troubles"));
-        rPage.replace(QLatin1String("%START-NEW%"), tr("Or you can start completely new session"));
-        rPage.replace(QLatin1String("%WINDOW%"), tr("Window"));
-        rPage.replace(QLatin1String("%WINDOWS-AND-TABS%"), tr("Windows and Tabs"));
-        rPage.replace(QLatin1String("%BUTTON-START-NEW%"), tr("Start New Session"));
-        rPage.replace(QLatin1String("%BUTTON-RESTORE%"), tr("Restore"));
-        rPage.replace(QLatin1String("%JAVASCRIPT-DISABLED%"), tr("Requires enabled JavaScript."));
-        rPage = QzTools::applyDirectionToPage(rPage);
-    }
-
-    return rPage;
-}
-
 QString FalkonSchemeReply::configPage()
 {
     static QString cPage;
@@ -341,7 +237,6 @@ QString FalkonSchemeReply::configPage()
         cPage.replace(QLatin1String("%PATHS-TEXT%"),
                       QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Profile"), DataPaths::currentProfilePath()) +
                       QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Settings"), DataPaths::currentProfilePath() + QSL("/settings.ini")) +
-                      QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Saved session"), SessionManager::defaultSessionPath()) +
                       QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Data"), allPaths(DataPaths::AppData)) +
                       QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Themes"), allPaths(DataPaths::Themes)) +
                       QSL("<dt>%1</dt><dd>%2<dd>").arg(tr("Extensions"), allPaths(DataPaths::Plugins)));

@@ -22,17 +22,12 @@
 #include <QWebEnginePage>
 
 #include "qzcommon.h"
-#include "webhittestresult.h"
 
-class QMenu;
-class QMouseEvent;
-class QKeyEvent;
-class QWheelEvent;
-
-class WebView;
 class WebPage;
-class DesktopFile;
 
+// Headless fork: all UI hooks (menus, input events, windows, settings dialogs)
+// have been removed. Plugins can only observe page state and reject
+// navigation requests / new windows.
 class PluginInterface
 {
 public:
@@ -47,25 +42,10 @@ public:
     virtual void unload() = 0;
     virtual bool testPlugin() = 0;
 
-    virtual void showSettings(QWidget* parent = nullptr) { Q_UNUSED(parent) }
-
-    virtual void populateWebViewMenu(QMenu* menu, WebView* view, const WebHitTestResult &r) { Q_UNUSED(menu) Q_UNUSED(view) Q_UNUSED(r) }
-    virtual void populateExtensionsMenu(QMenu *menu) { Q_UNUSED(menu) }
-
-    virtual bool mouseDoubleClick(Qz::ObjectName type, QObject* obj, QMouseEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-    virtual bool mousePress(Qz::ObjectName type, QObject* obj, QMouseEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-    virtual bool mouseRelease(Qz::ObjectName type, QObject* obj, QMouseEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-    virtual bool mouseMove(Qz::ObjectName type, QObject* obj, QMouseEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-
-    virtual bool wheelEvent(Qz::ObjectName type, QObject* obj, QWheelEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-
-    virtual bool keyPress(Qz::ObjectName type, QObject* obj, QKeyEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-    virtual bool keyRelease(Qz::ObjectName type, QObject* obj, QKeyEvent* event) { Q_UNUSED(type) Q_UNUSED(obj) Q_UNUSED(event) return false; }
-
     virtual bool acceptNavigationRequest(WebPage *page, const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame) { Q_UNUSED(page); Q_UNUSED(url); Q_UNUSED(type); Q_UNUSED(isMainFrame); return true; }
     virtual bool newWindowRequested(WebPage *page, QWebEngineNewWindowRequest &request) { Q_UNUSED(page) Q_UNUSED(request) return true; }
 };
 
-Q_DECLARE_INTERFACE(PluginInterface, "Falkon.Browser.PluginInterface/2.5")
+Q_DECLARE_INTERFACE(PluginInterface, "Falkon.Browser.PluginInterface/3.0")
 
 #endif // PLUGININTERFACE_H

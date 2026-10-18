@@ -29,8 +29,6 @@
 class QLibrary;
 class QPluginLoader;
 
-class SpeedDial;
-
 struct PluginSpec {
     QString name;
     QString description;
@@ -91,9 +89,6 @@ public:
 
     void shutdown();
 
-    // SpeedDial
-    SpeedDial* speedDial() { return m_speedDial; }
-
     static PluginSpec createSpec(const QJsonObject &metaData);
     static PluginSpec createSpec(const DesktopFile &metaData);
 
@@ -130,7 +125,6 @@ private:
 
     bool m_pluginsLoaded;
 
-    SpeedDial* m_speedDial;
     QList<PluginInterface*> m_internalPlugins;
 
     QLibrary *m_pythonPlugin = nullptr;

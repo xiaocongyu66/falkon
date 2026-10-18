@@ -19,17 +19,13 @@
 #include "adblockplugin.h"
 #include "adblockmanager.h"
 #include "adblocknetworkrequest.h"
-#include "adblockicon.h"
 #include "adblockscripts.h"
 #include "adblockresourceschemehandler.h"
 
 #include "scripts.h"
 #include "webpage.h"
 #include "pluginproxy.h"
-#include "browserwindow.h"
-#include "navigationbar.h"
 #include "mainapplication.h"
-#include "statusbar.h"
 #include "desktopfile.h"
 
 #include <QWebEngineProfile>
@@ -47,27 +43,17 @@ void AdBlockPlugin::init(InitState state, const QString &settingsPath)
     connect(mApp, &MainApplication::aboutToQuit, AdBlockManager::instance(), &AdBlockManager::save);
     connect(mApp->plugins(), &PluginProxy::webPageCreated, this, &AdBlockPlugin::webPageCreated);
     connect(mApp->plugins(), &PluginProxy::webPageDeleted, this, &AdBlockPlugin::webPageDeleted);
-    connect(mApp->plugins(), &PluginProxy::mainWindowCreated, this, &AdBlockPlugin::mainWindowCreated);
-    connect(mApp->plugins(), &PluginProxy::mainWindowDeleted, this, &AdBlockPlugin::mainWindowDeleted);
     connect(this, &AdBlockPlugin::newWindowRequestBlocked, AdBlockManager::instance(), &AdBlockManager::requestBlocked);
 
     m_resourceschemeHandler = new AdblockResourceSchemeHandler(this);
     mApp->webProfile()->installUrlSchemeHandler(QByteArrayLiteral("abp-resource"), m_resourceschemeHandler);
-    if (state == LateInitState) {
-        const auto windows = mApp->windows();
-        for (BrowserWindow *window : windows) {
-            mainWindowCreated(window);
-        }
-    }
+
+    // LateInitState only matters for per-window UI wiring, which does not exist headless.
+    Q_UNUSED(state)
 }
 
 void AdBlockPlugin::unload()
 {
-    const auto windows = mApp->windows();
-    for (BrowserWindow *window : windows) {
-        mainWindowDeleted(window);
-    }
-
     mApp->webProfile()->removeUrlSchemeHandler(m_resourceschemeHandler);
     delete m_resourceschemeHandler;
     m_resourceschemeHandler = nullptr;
@@ -76,11 +62,6 @@ void AdBlockPlugin::unload()
 bool AdBlockPlugin::testPlugin()
 {
     return true;
-}
-
-void AdBlockPlugin::showSettings(QWidget *parent)
-{
-    AdBlockManager::instance()->showDialog(parent);
 }
 
 void AdBlockPlugin::webPageCreated(WebPage *page)
@@ -112,22 +93,6 @@ void AdBlockPlugin::webPageCreated(WebPage *page)
 void AdBlockPlugin::webPageDeleted(WebPage *page)
 {
     AdBlockManager::instance()->clearBlockedRequestsForUrl(page->url());
-}
-
-void AdBlockPlugin::mainWindowCreated(BrowserWindow *window)
-{
-    auto *icon = new AdBlockIcon(window);
-    m_icons[window] = icon;
-    window->statusBar()->addButton(icon);
-    window->navigationBar()->addToolButton(icon);
-}
-
-void AdBlockPlugin::mainWindowDeleted(BrowserWindow *window)
-{
-    AdBlockIcon *icon = m_icons.take(window);
-    window->statusBar()->removeButton(icon);
-    window->navigationBar()->removeToolButton(icon);
-    delete icon;
 }
 
 bool AdBlockPlugin::acceptNavigationRequest(WebPage *page, const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame)

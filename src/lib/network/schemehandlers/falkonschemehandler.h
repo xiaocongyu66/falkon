@@ -53,8 +53,6 @@ private Q_SLOTS:
 private:
     QString aboutPage();
     QString startPage();
-    QString speeddialPage();
-    QString restorePage();
     QString configPage();
 
     bool m_loaded;

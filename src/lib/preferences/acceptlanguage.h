@@ -18,40 +18,16 @@
 #ifndef ACCEPTLANGUAGE_H
 #define ACCEPTLANGUAGE_H
 
-#include <QDialog>
 #include <QLocale>
 
 #include "qzcommon.h"
 
-namespace Ui
+// Headless fork: only the static Accept-Language header helpers remain.
+class FALKON_EXPORT AcceptLanguage
 {
-class AcceptLanguage;
-}
-
-class FALKON_EXPORT AcceptLanguage : public QDialog
-{
-    Q_OBJECT
-
 public:
-    explicit AcceptLanguage(QWidget* parent = nullptr);
-    ~AcceptLanguage() override;
-
     static QStringList defaultLanguage();
     static QByteArray generateHeader(const QStringList &langs);
-
-public Q_SLOTS:
-    void accept() override;
-
-private Q_SLOTS:
-    void addLanguage();
-    void removeLanguage();
-    void upLanguage();
-    void downLanguage();
-
-private:
-    QStringList expand(const QLocale::Language &language);
-
-    Ui::AcceptLanguage* ui;
 };
 
 #endif // ACCEPTLANGUAGE_H

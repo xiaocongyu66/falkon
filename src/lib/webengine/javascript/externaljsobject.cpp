@@ -17,11 +17,8 @@
 * ============================================================ */
 #include "externaljsobject.h"
 #include "mainapplication.h"
-#include "pluginproxy.h"
-#include "speeddial.h"
 #include "webpage.h"
 #include "autofilljsobject.h"
-#include "restoremanager.h"
 
 #include <QWebChannel>
 
@@ -61,25 +58,8 @@ void ExternalJsObject::unregisterExtraObject(QObject *object)
     s_extraObjects.remove(s_extraObjects.key(object));
 }
 
-QObject *ExternalJsObject::speedDial() const
-{
-    if (m_page->url().toString() != QL1S("falkon:speeddial")
-      && (m_page->requestedUrl().toString() != QL1S("falkon:speeddial") && !m_page->url().toString().isEmpty())) {
-        return nullptr;
-    }
-
-    return mApp->plugins()->speedDial();
-}
-
 QObject *ExternalJsObject::autoFill() const
 {
     return m_autoFill;
 }
 
-QObject *ExternalJsObject::recovery() const
-{
-    if (!mApp->restoreManager() || m_page->url().toString() != QL1S("falkon:restore"))
-        return nullptr;
-
-    return mApp->restoreManager()->recoveryObject(m_page);
-}

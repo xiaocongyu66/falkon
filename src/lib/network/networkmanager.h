@@ -35,9 +35,11 @@ class FALKON_EXPORT NetworkManager : public QNetworkAccessManager
 public:
     explicit NetworkManager(QObject *parent = nullptr);
 
-    bool certificateError(QWebEngineCertificateError &error, QWidget *parent = nullptr);
-    void authentication(const QUrl &url, QAuthenticator *auth, QWidget *parent = nullptr);
-    void proxyAuthentication(const QString &proxyHost, QAuthenticator *auth, QWidget *parent = nullptr);
+    // Headless: certificate errors are rejected unless host/type was whitelisted.
+    bool certificateError(QWebEngineCertificateError &error);
+    // Headless: HTTP auth uses stored autofill credentials only (otherwise cancels).
+    void authentication(const QUrl &url, QAuthenticator *auth);
+    void proxyAuthentication(const QString &proxyHost, QAuthenticator *auth);
 
     void installUrlInterceptor(UrlInterceptor *interceptor);
     void removeUrlInterceptor(UrlInterceptor *interceptor);

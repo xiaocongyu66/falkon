@@ -16,7 +16,6 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "adblockmanager.h"
-#include "adblockdialog.h"
 #include "adblockmatcher.h"
 #include "adblocknetworkrequest.h"
 #include "adblocksubscription.h"
@@ -25,16 +24,13 @@
 #include "mainapplication.h"
 #include "webpage.h"
 #include "qztools.h"
-#include "browserwindow.h"
 #include "settings.h"
 #include "networkmanager.h"
 
-#include <QAction>
 #include <QDateTime>
 #include <QTextStream>
 #include <QDir>
 #include <QTimer>
-#include <QMessageBox>
 #include <QUrlQuery>
 #include <QMutexLocker>
 #include <QSaveFile>
@@ -183,13 +179,8 @@ bool AdBlockManager::addSubscriptionFromUrl(const QUrl &url)
     if (subscriptionTitle.isEmpty() || subscriptionUrl.isEmpty())
         return false;
 
-    const QString message = AdBlockManager::tr("Do you want to add <b>%1</b> subscription?").arg(subscriptionTitle);
-
-    QMessageBox::StandardButton result = QMessageBox::question(nullptr, AdBlockManager::tr("AdBlock Subscription"), message, QMessageBox::Yes | QMessageBox::No);
-    if (result == QMessageBox::Yes) {
-        AdBlockManager::instance()->addSubscription(subscriptionTitle, subscriptionUrl);
-        AdBlockManager::instance()->showDialog();
-    }
+    // Headless: no confirmation prompt, add the subscription directly.
+    AdBlockManager::instance()->addSubscription(subscriptionTitle, subscriptionUrl);
 
     return true;
 }
@@ -448,28 +439,4 @@ AdBlockSubscription* AdBlockManager::subscriptionByName(const QString &name) con
     }
 
     return nullptr;
-}
-
-AdBlockDialog *AdBlockManager::showDialog(QWidget *parent)
-{
-    if (!m_adBlockDialog) {
-        m_adBlockDialog = new AdBlockDialog(parent ? parent : mApp->getWindow());
-    }
-
-    m_adBlockDialog.data()->show();
-    m_adBlockDialog.data()->raise();
-    m_adBlockDialog.data()->activateWindow();
-
-    return m_adBlockDialog.data();
-}
-
-void AdBlockManager::showRule()
-{
-    if (auto* action = qobject_cast<QAction*>(sender())) {
-        const AdBlockRule* rule = static_cast<const AdBlockRule*>(action->data().value<void*>());
-
-        if (rule) {
-            showDialog()->showRule(rule);
-        }
-    }
 }

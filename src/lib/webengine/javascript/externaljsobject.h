@@ -30,9 +30,7 @@ class QWebChannel;
 class FALKON_EXPORT ExternalJsObject : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QObject* speedDial READ speedDial CONSTANT)
     Q_PROPERTY(QObject* autoFill READ autoFill CONSTANT)
-    Q_PROPERTY(QObject* recovery READ recovery CONSTANT)
 
 public:
     explicit ExternalJsObject(WebPage *page);
@@ -45,9 +43,7 @@ public:
     static void unregisterExtraObject(QObject *object);
 
 private:
-    QObject *speedDial() const;
     QObject *autoFill() const;
-    QObject *recovery() const;
 
     WebPage *m_page;
     AutoFillJsObject *m_autoFill;

@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/kdeframeworksintegration">
-        <file>data/icon.svg</file>
-    </qresource>
-</RCC>

@@ -17,21 +17,16 @@
 * ============================================================ */
 #include "pluginproxy.h"
 #include "mainapplication.h"
-#include "speeddial.h"
 #include "settings.h"
 #include "datapaths.h"
 #include "adblock/adblockplugin.h"
 #include "../config.h"
 #include "desktopfile.h"
-#include "qml/qmlplugins.h"
-#include "qml/qmlplugin.h"
 
 #include <iostream>
 
 #include <QPluginLoader>
 #include <QDir>
-#include <QQmlEngine>
-#include <QQmlComponent>
 #include <QFileInfo>
 #include <QSettings>
 
@@ -53,7 +48,6 @@ bool Plugins::Plugin::operator==(const Plugin &other) const
 Plugins::Plugins(QObject* parent)
     : QObject(parent)
     , m_pluginsLoaded(false)
-    , m_speedDial(new SpeedDial(this))
 {
     loadSettings();
 
@@ -268,18 +262,13 @@ void Plugins::loadAvailablePlugins()
             const QString pluginPath = info.absoluteFilePath();
             if (info.isFile() && QLibrary::isLibrary(pluginPath)) {
                 // SharedLibraryPlugin
-                if (info.baseName() != QL1S("PyFalkon")) {
-                    plugin = loadSharedLibraryPlugin(pluginPath);
-                }
+                plugin = loadSharedLibraryPlugin(pluginPath);
             } else if (info.isDir()) {
                 const DesktopFile metaData(QDir(pluginPath).filePath(QSL("metadata.desktop")));
                 const QString type = metaData.value(QSL("X-Falkon-Type")).toString();
                 if (type == QL1S("Extension/Python")) {
                     // PythonPlugin
                     plugin = loadPythonPlugin(pluginPath);
-                } else if (type == QL1S("Extension/Qml")) {
-                    // QmlPlugin
-                    plugin = QmlPlugin::loadPlugin(pluginPath);
                 } else {
                     qWarning() << "Invalid type" << type << "of" << pluginPath << "plugin";
                 }
@@ -350,8 +339,6 @@ Plugins::Plugin Plugins::loadPlugin(const QString &id)
             type = Plugin::SharedLibraryPlugin;
         } else if (t == QL1S("python")) {
             type = Plugin::PythonPlugin;
-        } else if (t == QL1S("qml")) {
-            type = Plugin::QmlPlugin;
         }
         name = id.mid(colon + 1);
     } else {
@@ -368,9 +355,6 @@ Plugins::Plugin Plugins::loadPlugin(const QString &id)
 
     case Plugin::PythonPlugin:
         return loadPythonPlugin(name);
-
-    case Plugin::QmlPlugin:
-        return QmlPlugin::loadPlugin(name);
 
     default:
         return {};
@@ -454,10 +438,6 @@ bool Plugins::initPlugin(PluginInterface::InitState state, Plugin *plugin)
 
     case Plugin::PythonPlugin:
         initPythonPlugin(plugin);
-        break;
-
-    case Plugin::QmlPlugin:
-        QmlPlugin::initPlugin(plugin);
         break;
 
     default:

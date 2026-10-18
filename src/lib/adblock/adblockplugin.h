@@ -20,9 +20,6 @@
 #include "plugininterface.h"
 
 class WebPage;
-class BrowserWindow;
-
-class AdBlockIcon;
 class AdblockResourceSchemeHandler;
 struct AdBlockedRequest;
 
@@ -37,7 +34,6 @@ public:
     void init(InitState state, const QString &settingsPath) override;
     void unload() override;
     bool testPlugin() override;
-    void showSettings(QWidget *parent = nullptr) override;
 
 Q_SIGNALS:
     void newWindowRequestBlocked(const AdBlockedRequest &request);
@@ -45,11 +41,8 @@ Q_SIGNALS:
 private:
     void webPageCreated(WebPage *page);
     void webPageDeleted(WebPage *page);
-    void mainWindowCreated(BrowserWindow *window);
-    void mainWindowDeleted(BrowserWindow *window);
     bool acceptNavigationRequest(WebPage *page, const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame) override;
     bool newWindowRequested(WebPage *page, QWebEngineNewWindowRequest &request) override;
 
-    QHash<BrowserWindow*, AdBlockIcon*> m_icons;
     AdblockResourceSchemeHandler *m_resourceschemeHandler = nullptr;
 };

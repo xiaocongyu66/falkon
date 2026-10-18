@@ -31,7 +31,6 @@
 #define ADBLOCK_NOCOINLIST_URL QSL("https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt")
 
 class AdBlockRule;
-class AdBlockDialog;
 class AdBlockMatcher;
 class AdBlockNeworkRequest;
 class AdBlockCustomList;
@@ -96,14 +95,11 @@ Q_SIGNALS:
 
 public Q_SLOTS:
     void setEnabled(bool enabled);
-    void showRule();
 
     void updateMatcher();
     void updateAllSubscriptions();
 
     void requestBlocked(const AdBlockedRequest &request);
-
-    AdBlockDialog *showDialog(QWidget *parent = nullptr);
 
 private:
     bool m_loaded;
@@ -114,7 +110,6 @@ private:
     QStringList m_disabledRules;
 
     AdBlockUrlInterceptor *m_interceptor;
-    QPointer<AdBlockDialog> m_adBlockDialog;
     QMutex m_mutex;
     QHash<QUrl, QVector<AdBlockedRequest>> m_blockedRequests;
 };

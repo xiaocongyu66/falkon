@@ -18,7 +18,6 @@
 #include "gm_plugin.h"
 #include "gm_manager.h"
 #include "gm_script.h"
-#include "browserwindow.h"
 #include "webpage.h"
 #include "pluginproxy.h"
 #include "mainapplication.h"

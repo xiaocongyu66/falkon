@@ -21,6 +21,7 @@
 #include "datapaths.h"
 #include "adblock/adblockplugin.h"
 #include "../config.h"
+#include <QIcon>
 #include "desktopfile.h"
 
 #include <iostream>

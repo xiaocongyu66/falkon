@@ -270,18 +270,8 @@ QString FalkonSchemeReply::configPage()
     QString page = cPage;
     page.replace(QLatin1String("%USER-AGENT%"), mApp->webProfile()->httpUserAgent());
 
-    QString pluginsString;
-    const QList<Plugins::Plugin> &availablePlugins = mApp->plugins()->availablePlugins();
-
-    for (const Plugins::Plugin &plugin : availablePlugins) {
-        PluginSpec spec = plugin.pluginSpec;
-        pluginsString.append(QSL("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td></tr>").arg(
-                                 spec.name, spec.version, spec.author.toHtmlEscaped(), spec.description));
-    }
-
-    if (pluginsString.isEmpty()) {
-        pluginsString = QSL("<tr><td colspan=4 class=\"no-available-plugins\">%1</td></tr>").arg(tr("No available extensions."));
-    }
+    // Headless build: extension listing is a UI concept.
+    QString pluginsString = QSL("<tr><td colspan=4 class=\"no-available-plugins\">%1</td></tr>").arg(tr("No available extensions."));
 
     page.replace(QLatin1String("%PLUGINS-INFO%"), pluginsString);
 

@@ -914,7 +914,7 @@ QByteArray MainApplication::saveState() const
 
 void MainApplication::saveSettings()
 {
-    if (isPrivate()) {
+    if (isPrivate() || m_headlessRequested) {
         return;
     }
 

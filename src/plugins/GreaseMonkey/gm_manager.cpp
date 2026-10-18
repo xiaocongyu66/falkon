@@ -402,12 +402,10 @@ void GM_Manager::setEnabled(const bool enabled)
     }
 }
 
-void GM_Manager::mainWindowCreated(BrowserWindow* window)
+void GM_Manager::mainWindowCreated()
 {
-    Q_UNUSED(window)
 }
 
-void GM_Manager::mainWindowDeleted(BrowserWindow* window)
+void GM_Manager::mainWindowDeleted()
 {
-    Q_UNUSED(window)
 }

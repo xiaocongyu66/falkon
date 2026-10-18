@@ -19,19 +19,12 @@
 #include "gm_script.h"
 #include "gm_downloader.h"
 #include "gm_jsobject.h"
-#include "gm_icon.h"
-#include "gm_addscriptdialog.h"
-#include "settings/gm_settings.h"
 
-#include "browserwindow.h"
 #include "webpage.h"
 #include "qztools.h"
 #include "mainapplication.h"
 #include "networkmanager.h"
-#include "navigationbar.h"
-#include "desktopnotificationsfactory.h"
 #include "javascript/externaljsobject.h"
-#include "statusbar.h"
 
 #include <QTimer>
 #include <QDir>
@@ -53,16 +46,6 @@ GM_Manager::~GM_Manager()
     ExternalJsObject::unregisterExtraObject(m_jsObject);
 }
 
-void GM_Manager::showSettings(QWidget* parent)
-{
-    if (!m_settings) {
-        m_settings = new GM_Settings(this, parent);
-    }
-
-    m_settings.data()->show();
-    m_settings.data()->raise();
-}
-
 void GM_Manager::downloadScript(const QUrl &url)
 {
     auto *downloader = new GM_Downloader(url, this);
@@ -70,12 +53,13 @@ void GM_Manager::downloadScript(const QUrl &url)
         bool deleteScript = true;
         auto *script = new GM_Script(this, fileName);
         if (script->isValid()) {
+            // Headless build: install scripts unconditionally (no confirm dialog).
             if (!containsScript(script->fullName())) {
-                GM_AddScriptDialog dialog(this, script);
-                deleteScript = dialog.exec() != QDialog::Accepted;
+                addScript(script);
+                deleteScript = false;
             }
             else {
-                showNotification(tr("'%1' is already installed").arg(script->name()));
+                std::cout << "GreaseMonkey: script already installed: " << qPrintable(script->name()) << std::endl;
             }
         }
 
@@ -176,15 +160,6 @@ void GM_Manager::unloadPlugin()
     settings.setValue(QSL("enabled"), m_enabled);
     settings.setValue(QSL("disabledScripts"), m_disabledScripts);
     settings.endGroup();
-
-    delete m_settings.data();
-
-    // Remove icons from all windows
-    QHashIterator<BrowserWindow*, GM_Icon*> it(m_windows);
-    while (it.hasNext()) {
-        it.next();
-        mainWindowDeleted(it.key());
-    }
 
     unloadScripts();
 
@@ -318,11 +293,12 @@ bool GM_Manager::removeScript(GM_Script* script, const bool removeFile)
     return true;
 }
 
+#include <iostream>
+
 void GM_Manager::showNotification(const QString &message, const QString &title)
 {
-    QIcon icon(QSL(":gm/data/icon.svg"));
-
-    mApp->desktopNotifications()->showNotification(icon.pixmap(48), title.isEmpty() ? tr("GreaseMonkey") : title, message);
+    Q_UNUSED(title)
+    std::cout << "GreaseMonkey: " << qPrintable(message) << std::endl;
 }
 
 void GM_Manager::load()
@@ -428,16 +404,10 @@ void GM_Manager::setEnabled(const bool enabled)
 
 void GM_Manager::mainWindowCreated(BrowserWindow* window)
 {
-    auto *icon = new GM_Icon(this);
-    window->statusBar()->addButton(icon);
-    window->navigationBar()->addToolButton(icon);
-    m_windows[window] = icon;
+    Q_UNUSED(window)
 }
 
 void GM_Manager::mainWindowDeleted(BrowserWindow* window)
 {
-    GM_Icon *icon = m_windows.take(window);
-    window->statusBar()->removeButton(icon);
-    window->navigationBar()->removeToolButton(icon);
-    delete icon;
+    Q_UNUSED(window)
 }

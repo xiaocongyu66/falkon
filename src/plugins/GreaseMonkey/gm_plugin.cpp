@@ -39,16 +39,7 @@ void GM_Plugin::init(InitState state, const QString &settingsPath)
 {
     m_manager = new GM_Manager(settingsPath, this);
 
-    connect(mApp->plugins(), &PluginProxy::mainWindowCreated, m_manager, &GM_Manager::mainWindowCreated);
-    connect(mApp->plugins(), &PluginProxy::mainWindowDeleted, m_manager, &GM_Manager::mainWindowDeleted);
-
-    // Make sure userscripts works also with already created WebPages
-    if (state == LateInitState) {
-        const auto windows = mApp->windows();
-        for (BrowserWindow *window : windows) {
-            m_manager->mainWindowCreated(window);
-        }
-    }
+    Q_UNUSED(state)
 }
 
 void GM_Plugin::unload()
@@ -61,58 +52,6 @@ bool GM_Plugin::testPlugin()
 {
     // Require the version that the plugin was built with
     return (QString::fromLatin1(Qz::VERSION) == QLatin1String(FALKON_VERSION));
-}
-
-void GM_Plugin::showSettings(QWidget* parent)
-{
-    m_manager->showSettings(parent);
-}
-
-void GM_Plugin::populateWebViewMenu(QMenu* menu, WebView* view, const WebHitTestResult& r)
-{
-    Q_UNUSED(r)
-
-    if (!m_manager->isEnabled()) {
-        return;
-    }
-
-    if (m_manager->contextMenuScripts().isEmpty()) {
-        return;
-    }
-
-    const QUrl url = view->url();
-    QList<GM_Script*> matchingScripts;
-
-    auto contextMenuScripts = m_manager->contextMenuScripts();
-    for (const auto &script : std::as_const(contextMenuScripts)) {
-        if (script->match(url)) {
-            matchingScripts.append(script);
-        }
-    }
-
-    if (matchingScripts.isEmpty()) {
-        return;
-    }
-
-    auto* gmMenu = new QMenu(tr("GreaseMonkey"));
-    gmMenu->setIcon(QIcon(QSL(":gm/data/icon.svg")));
-
-    for (const auto &script : std::as_const(matchingScripts)) {
-        if (!m_manager->canRunScript(script)) {
-            continue;
-        }
-
-        gmMenu->addAction(script->icon(), script->name(), this, [script, view]() {
-            view->page()->execJavaScript(script->webScript().sourceCode(), WebPage::SafeJsWorld);
-        });
-    }
-
-    if (gmMenu->isEmpty()) {
-        delete gmMenu;
-    }
-    else {
-        menu->addMenu(gmMenu);
-    }
 }
 
 bool GM_Plugin::acceptNavigationRequest(WebPage *page, const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame)

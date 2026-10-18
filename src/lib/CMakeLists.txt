@@ -58,7 +58,6 @@ set(SRCS ${SRCS}
     app/qzcommon.cpp
     app/settings.cpp
     autofill/autofill.cpp
-    autofill/passwordbackends/databaseencryptedpasswordbackend.cpp
     autofill/passwordbackends/databasepasswordbackend.cpp
     autofill/passwordbackends/passwordbackend.cpp
     autofill/passwordmanager.cpp
@@ -115,7 +114,6 @@ set(SRCS ${SRCS}
     app/qzcommon.h
     app/settings.h
     autofill/autofill.h
-    autofill/passwordbackends/databaseencryptedpasswordbackend.h
     autofill/passwordbackends/databasepasswordbackend.h
     autofill/passwordbackends/passwordbackend.h
     autofill/passwordmanager.h

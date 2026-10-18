@@ -21,9 +21,6 @@
 #include "webpage.h"
 #include "pluginproxy.h"
 #include "mainapplication.h"
-#include "tabwidget.h"
-#include "webtab.h"
-#include "webview.h"
 #include "../config.h"
 
 #include <QtWebEngineWidgetsVersion>

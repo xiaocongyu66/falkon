@@ -204,11 +204,7 @@ void AutoFill::saveForm(WebPage *page, const QUrl &frameUrl, const PageFormData 
     }
 
     // Headless build: no notification bar; store without asking.
-    PageFormData store = updateData;
-    if (store.data.isEmpty() && !isStored(frameUrl)) {
-        store = formData;
-    }
-    addEntry(frameUrl, store);
+    addEntry(frameUrl, formData);
 }
 
 // Returns all saved passwords on this page

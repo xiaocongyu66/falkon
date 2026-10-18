@@ -73,6 +73,14 @@
 
 #include <QWebEngineNotification>
 #include <QWebEngineUrlScheme>
+#include <QWebEngineView>
+
+#include <QCommandLineParser>
+#include <QEventLoop>
+#include <QTimer>
+#include <functional>
+
+#include "webpage.h"
 
 #if QTWEBENGINECORE_VERSION >= QT_VERSION_CHECK(6, 9, 0)
 #include <QWebEngineProfileBuilder>
@@ -200,6 +208,10 @@ MainApplication::MainApplication(int &argc, char** argv)
             case Qz::CL_StartNewInstance:
                 newInstance = true;
                 break;
+            case Qz::CL_HeadlessRender:
+                m_headlessRequested = true;
+                m_headlessUrl = QUrl::fromUserInput(pair.text);
+                break;
             case Qz::CL_OpenUrlInCurrentTab:
                 startUrls.append(QUrl::fromUserInput(pair.text));
                 messages.append(QSL("ACTION:OpenUrlInCurrentTab") + pair.text);
@@ -272,7 +284,7 @@ MainApplication::MainApplication(int &argc, char** argv)
         messages.append(QStringLiteral(" "));
     }
 
-    if (isRunning()) {
+    if (isRunning() && !m_headlessRequested) {
         m_isClosing = true;
         for (const QString &message : std::as_const(messages)) {
             sendMessage(message);
@@ -379,7 +391,7 @@ MainApplication::MainApplication(int &argc, char** argv)
         }
 
         // we have to ask about startup session before creating main window
-        if (!m_isStartingAfterCrash && afterLaunch() == SelectSession)
+        if (!m_headlessRequested && !m_isStartingAfterCrash && afterLaunch() == SelectSession)
             m_restoreManager = new RestoreManager(sessionManager()->askSessionFromUser());
     }
 
@@ -392,12 +404,16 @@ MainApplication::MainApplication(int &argc, char** argv)
     if (!noAddons)
         m_plugins->loadPlugins();
 
-    BrowserWindow *window = createWindow(Qz::BW_FirstAppWindow, std::move(startUrls));
-    connect(window, SIGNAL(startingCompleted()), this, SLOT(restoreOverrideCursor()));
+    if (m_headlessRequested) {
+        QTimer::singleShot(0, this, &MainApplication::runHeadlessRender);
+    } else {
+        BrowserWindow *window = createWindow(Qz::BW_FirstAppWindow, std::move(startUrls));
+        connect(window, SIGNAL(startingCompleted()), this, SLOT(restoreOverrideCursor()));
 
-    connect(this, &QApplication::focusChanged, this, &MainApplication::onFocusChanged);
+        connect(this, &QApplication::focusChanged, this, &MainApplication::onFocusChanged);
+    }
 
-    if (!isPrivate() && !isTestModeEnabled()) {
+    if (!m_headlessRequested && !isPrivate() && !isTestModeEnabled()) {
 #ifndef DISABLE_CHECK_UPDATES
         Settings settings;
         bool checkUpdates = settings.value("Web-Browser-Settings/CheckUpdates", true).toBool();
@@ -426,7 +442,8 @@ MainApplication::MainApplication(int &argc, char** argv)
     connect(this, SIGNAL(messageReceived(QString)), this, SLOT(messageReceived(QString)));
     connect(this, &QCoreApplication::aboutToQuit, this, &MainApplication::saveSettings);
 
-    QTimer::singleShot(0, this, &MainApplication::postLaunch);
+    if (!m_headlessRequested)
+        QTimer::singleShot(0, this, &MainApplication::postLaunch);
 }
 
 MainApplication::~MainApplication()
@@ -1390,4 +1407,99 @@ bool MainApplication::event(QEvent* e)
     }
 
     return QtSingleApplication::event(e);
+}
+
+void MainApplication::runHeadlessRender()
+{
+    // Re-parse local headless parameters (main parser belongs to CommandLineOptions)
+    QCommandLineParser parser;
+    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseLongOptions);
+    const QCommandLineOption outOpt(QSL("headless-output"), QSL("Output file"), QSL("file"), QSL("out.png"));
+    const QCommandLineOption wOpt(QSL("headless-width"), QSL("Viewport width"), QSL("px"), QSL("800"));
+    const QCommandLineOption hOpt(QSL("headless-height"), QSL("Viewport height"), QSL("px"), QSL("600"));
+    const QCommandLineOption tOpt(QSL("headless-timeout"), QSL("Timeout (ms)"), QSL("ms"), QSL("30000"));
+    parser.addOption(outOpt);
+    parser.addOption(wOpt);
+    parser.addOption(hOpt);
+    parser.addOption(tOpt);
+    parser.parse(QCoreApplication::arguments());
+
+    const QString outputPath = parser.value(outOpt);
+    const int width = qMax(1, parser.value(wOpt).toInt());
+    const int height = qMax(1, parser.value(hOpt).toInt());
+    const int timeout = qMax(1000, parser.value(tOpt).toInt());
+
+    auto *view = new QWebEngineView();
+    // Falkon WebPage：复用 adblock 拦截、用户脚本、证书处理
+    auto *page = new WebPage(view);
+    view->setPage(page);
+    view->resize(width, height);
+
+    QEventLoop loop;
+    QTimer timeoutTimer;
+    timeoutTimer.setSingleShot(true);
+    bool done = false;
+
+    std::function<void()> finish = [&](int code) {
+        if (done) {
+            return;
+        }
+        done = true;
+        loop.exit(code);
+    };
+
+    QObject::connect(&timeoutTimer, &QTimer::timeout, view, [this, &finish, timeout]() {
+        std::cout << "Falkon headless: render timed out after " << timeout << " ms" << std::endl;
+        finish(2);
+    });
+
+    // 资源绪判定：主文档完成 + 无 pending 图片 + fonts.ready
+    const QString checkScript = QSL(
+        "(function(){"
+        "  if (document.readyState !== 'complete') return 'wait';"
+        "  for (var i = 0; i < document.images.length; ++i) { if (!document.images[i].complete) return 'wait'; }"
+        "  return document.fonts && document.fonts.status === 'loading' ? 'wait' : 'ready';"
+        "})()");
+
+    QTimer pollTimer;
+    pollTimer.setInterval(100);
+    QObject::connect(&pollTimer, &QTimer::timeout, view, [&]() {
+        view->page()->runJavaScript(checkScript, 0, [&](const QVariant &result) {
+            if (done || result.toString() != QSL("ready")) {
+                return;
+            }
+            pollTimer.stop();
+            // 等两帧让合成器 flush
+            view->page()->runJavaScript(QSL(
+                "(function(){return new Promise(function(res){"
+                "  requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});"
+                "});})()"), 0, [&](const QVariant &) {
+                const QPixmap shot = view->grab();
+                if (shot.save(outputPath)) {
+                    std::cout << "Falkon headless: saved " << qPrintable(outputPath) << std::endl;
+                    finish(0);
+                } else {
+                    std::cout << "Falkon headless: failed to save " << qPrintable(outputPath) << std::endl;
+                    finish(3);
+                }
+            });
+        });
+    });
+
+    QObject::connect(view, &QWebEngineView::loadFinished, view, [&](bool ok) {
+        if (!ok) {
+            std::cout << "Falkon headless: page failed to load" << std::endl;
+            finish(4);
+        }
+    });
+
+    view->show();
+    view->load(m_headlessUrl);
+    pollTimer.start();
+    timeoutTimer.start(timeout);
+    const int code = loop.exec();
+    timeoutTimer.stop();
+    pollTimer.stop();
+    view->deleteLater();
+    QCoreApplication::exit(code);
 }

@@ -52,6 +52,16 @@ int main(int argc, char* argv[])
     qInstallMessageHandler(&msgHandler);
 #endif
 
+    // Headless 渲染无显示环境：默认 offscreen 平台（可显式覆盖 QT_QPA_PLATFORM）
+    if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+        for (int i = 1; i < argc; ++i) {
+            if (qstrcmp(argv[i], "--headless-render") == 0) {
+                qputenv("QT_QPA_PLATFORM", "offscreen");
+                break;
+            }
+        }
+    }
+
     // Hack to fix QT_STYLE_OVERRIDE with QProxyStyle
     const QByteArray style = qgetenv("QT_STYLE_OVERRIDE");
     if (!style.isEmpty()) {

@@ -94,6 +94,7 @@ enum CommandLineAction {
     CL_StartPrivateBrowsing,
     CL_StartNewInstance,
     CL_StartPortable,
+    CL_HeadlessRender,
     CL_ExitAction,
     CL_WMClass
 };

@@ -53,6 +53,26 @@ void CommandLineOptions::parseActions()
     QCommandLineOption portableOption(QStringList({QSL("o"), QSL("portable")}));
     portableOption.setDescription(QSL("Starts in portable mode."));
 
+    QCommandLineOption headlessRenderOption(QSL("headless-render"));
+    headlessRenderOption.setValueName(QSL("URL"));
+    headlessRenderOption.setDescription(QSL("Render page headless (no windows) and save screenshot."));
+
+    QCommandLineOption headlessOutputOption(QSL("headless-output"));
+    headlessOutputOption.setValueName(QSL("FILE"));
+    headlessOutputOption.setDescription(QSL("Screenshot output path (default: out.png)."));
+
+    QCommandLineOption headlessWidthOption(QSL("headless-width"));
+    headlessWidthOption.setValueName(QSL("PX"));
+    headlessWidthOption.setDescription(QSL("Viewport width (default: 800)."));
+
+    QCommandLineOption headlessHeightOption(QSL("headless-height"));
+    headlessHeightOption.setValueName(QSL("PX"));
+    headlessHeightOption.setDescription(QSL("Viewport height (default: 600)."));
+
+    QCommandLineOption headlessTimeoutOption(QSL("headless-timeout"));
+    headlessTimeoutOption.setValueName(QSL("MS"));
+    headlessTimeoutOption.setDescription(QSL("Render timeout in milliseconds (default: 30000)."));
+
     QCommandLineOption noRemoteOption(QStringList({QSL("r"), QSL("no-remote")}));
     noRemoteOption.setDescription(QSL("Starts new browser instance."));
 
@@ -90,6 +110,11 @@ void CommandLineOptions::parseActions()
     parser.addOption(noExtensionsOption);
     parser.addOption(privateBrowsingOption);
     parser.addOption(portableOption);
+    parser.addOption(headlessRenderOption);
+    parser.addOption(headlessOutputOption);
+    parser.addOption(headlessWidthOption);
+    parser.addOption(headlessHeightOption);
+    parser.addOption(headlessTimeoutOption);
     parser.addOption(noRemoteOption);
     parser.addOption(newTabOption);
     parser.addOption(newWindowOption);
@@ -158,6 +183,13 @@ void CommandLineOptions::parseActions()
     if (parser.isSet(portableOption)) {
         ActionPair pair;
         pair.action = Qz::CL_StartPortable;
+        m_actions.append(pair);
+    }
+
+    if (parser.isSet(headlessRenderOption)) {
+        ActionPair pair;
+        pair.action = Qz::CL_HeadlessRender;
+        pair.text = parser.value(headlessRenderOption);
         m_actions.append(pair);
     }
 

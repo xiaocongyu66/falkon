@@ -175,6 +175,10 @@ private:
     void registerAllowedSchemes();
     void initNetworkInformation();
 
+    void runHeadlessRender();
+    bool m_headlessRequested = false;
+    QUrl m_headlessUrl;
+
     bool m_isPrivate;
     bool m_isPortable;
     bool m_isClosing;

@@ -215,14 +215,8 @@ void Bookmarks::init()
     m_folderUnsorted->setTitle(tr("Unsorted Bookmarks"));
     m_folderUnsorted->setDescription(tr("All other bookmarks"));
 
-    if (BookmarksTools::migrateBookmarksIfNecessary(this)) {
-        // Bookmarks migrated just now, let's save them ASAP
-        saveBookmarks();
-    }
-    else {
-        // Bookmarks don't need to be migrated, just load them as usual
-        loadBookmarks();
-    }
+    // Headless build: no BookmarksTools; just load as usual.
+    loadBookmarks();
 
     m_lastFolder = m_folderUnsorted;
     m_model = new BookmarksModel(m_root, this, this);

@@ -27,7 +27,6 @@
 
 class QIcon;
 
-class WebView;
 class HistoryModel;
 
 class FALKON_EXPORT History : public QObject
@@ -49,7 +48,6 @@ public:
 
     HistoryModel* model();
 
-    void addHistoryEntry(WebView* view);
     void addHistoryEntry(const QUrl &url, QString title);
 
     void deleteHistoryEntry(int index);

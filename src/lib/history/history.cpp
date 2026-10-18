@@ -50,19 +50,6 @@ void History::loadSettings()
     settings.endGroup();
 }
 
-// AddHistoryEntry
-void History::addHistoryEntry(WebView* view)
-{
-    if (!m_isSaving) {
-        return;
-    }
-
-    const QUrl url = view->url();
-    const QString title = view->title();
-
-    addHistoryEntry(url, title);
-}
-
 void History::addHistoryEntry(const QUrl &url, QString title)
 {
     if (!m_isSaving) {

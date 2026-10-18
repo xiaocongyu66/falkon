@@ -41,6 +41,7 @@
 #include <QWebEngineHistory>
 #include <QWebEngineSettings>
 #include <QWebEngineView>
+#include <QWebEngineFullScreenRequest>
 #include <QTimer>
 #include <QDesktopServices>
 #include <QAuthenticator>

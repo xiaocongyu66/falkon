@@ -28,6 +28,7 @@
 
 class QLibrary;
 class QPluginLoader;
+class DesktopFile;
 
 struct PluginSpec {
     QString name;

@@ -18,7 +18,6 @@
 #include "profilemanager.h"
 #include "mainapplication.h"
 #include "datapaths.h"
-#include "updater.h"
 #include "qztools.h"
 #include "sqldatabase.h"
 #include "sitesettingsmanager.h"

@@ -21,6 +21,7 @@
 #define mApp MainApplication::instance()
 
 #include <QList>
+#include <QUrl>
 
 #include "qtsingleapplication/qtsingleapplication.h"
 #include "qzcommon.h"

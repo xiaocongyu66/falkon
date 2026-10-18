@@ -16,6 +16,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "ocssupport.h"
+
+#include <iostream>
 #include "pluginproxy.h"
 #include "datapaths.h"
 #include "networkmanager.h"
@@ -118,8 +120,9 @@ OcsSupport *OcsSupport::instance()
 
 void OcsSupport::installTheme(const KArchiveDirectory *directory)
 {
-    auto showError = []() {
-        mApp->desktopNotifications()->showNotification(tr("Installation failed"), tr("Failed to install theme"));
+    auto showError = [&]() {
+        const QString msg = tr("Installation failed") + QSL(" - ") + tr("Failed to install theme");
+        std::cout << "OCS: " << qPrintable(msg) << std::endl;
     };
 
     if (directory->entries().size() != 1) {
@@ -143,7 +146,8 @@ void OcsSupport::installTheme(const KArchiveDirectory *directory)
 
     if (QFileInfo::exists(targetDir + QL1C('/') + name)) {
         qWarning() << "Theme" << name << "already exists";
-        mApp->desktopNotifications()->showNotification(tr("Installation failed"), tr("Theme is already installed"));
+        const QString msg = tr("Installation failed") + QSL(" - ") + tr("Theme is already installed");
+        std::cout << "OCS: " << qPrintable(msg) << std::endl;
         return;
     }
 
@@ -155,13 +159,15 @@ void OcsSupport::installTheme(const KArchiveDirectory *directory)
 
     qInfo() << "Theme installed to" << targetDir;
 
-    mApp->desktopNotifications()->showNotification(tr("Theme installed"), tr("'%1' was successfully installed").arg(metaData.name()));
+    const QString msg = tr("Theme installed") + QSL(" - ") + tr("Theme successfully installed");
+    std::cout << "OCS: " << qPrintable(msg) << std::endl;
 }
 
 void OcsSupport::installExtension(const KArchiveDirectory *directory)
 {
-    auto showError = []() {
-        mApp->desktopNotifications()->showNotification(tr("Installation failed"), tr("Failed to install extension"));
+    auto showError = [&]() {
+        const QString msg = tr("Installation failed") + QSL(" - ") + tr("Failed to install extension");
+        std::cout << "OCS: " << qPrintable(msg) << std::endl;
     };
 
     if (directory->entries().size() != 1) {
@@ -199,7 +205,8 @@ void OcsSupport::installExtension(const KArchiveDirectory *directory)
 
     if (QFileInfo::exists(targetDir + QL1S("/") + name)) {
         qWarning() << "Extension" << name << "already exists";
-        mApp->desktopNotifications()->showNotification(tr("Installation failed"), tr("Extension is already installed"));
+        const QString msg = tr("Installation failed") + QSL(" - ") + tr("Extension is already installed");
+        std::cout << "OCS: " << qPrintable(msg) << std::endl;
         return;
     }
 
@@ -218,5 +225,6 @@ void OcsSupport::installExtension(const KArchiveDirectory *directory)
         return;
     }
 
-    mApp->desktopNotifications()->showNotification(tr("Extension installed"), tr("'%1' was successfully installed").arg(metaData.name()));
+    const QString msg = tr("Extension installed") + QSL(" - ") + tr("Extension successfully installed");
+    std::cout << "OCS: " << qPrintable(msg) << std::endl;
 }

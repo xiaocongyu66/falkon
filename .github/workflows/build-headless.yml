@@ -21,7 +21,7 @@ jobs:
             qt6-5compat-dev \
             libkf6archive-dev libkf6i18n-dev libssl-dev \
             libxkbcommon-dev libxcb-util-dev libcups2-dev \
-            libqt6sql6-sqlite dbus-x11 gdb
+            libqt6sql6-sqlite dbus-x11 gdb file
 
       - uses: actions/checkout@v4
 

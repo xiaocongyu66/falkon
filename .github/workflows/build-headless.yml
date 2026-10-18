@@ -21,7 +21,7 @@ jobs:
             qt6-5compat-dev \
             libkf6archive-dev libkf6i18n-dev libssl-dev \
             libxkbcommon-dev libxcb-util-dev libcups2-dev \
-            libqt6sql6-sqlite dbus-x11
+            libqt6sql6-sqlite dbus-x11 gdb
 
       - uses: actions/checkout@v4
 
@@ -45,7 +45,8 @@ jobs:
             exit 1
           fi
           echo "using $FALCON_BIN"
-          "$FALCON_BIN" --headless-render \
+          gdb -batch -ex run -ex 'thread apply all bt 25' -ex quit \
+            --args "$FALCON_BIN" --headless-render \
             "data:text/html,<h1 style='color:#3494d9'>Falkon Headless OK</h1>" \
             --headless-output smoke.png \
             --headless-width 800 --headless-height 400 \

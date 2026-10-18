@@ -9,7 +9,6 @@ set(SRCS
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(SRCS ${SRCS} ${CMAKE_SOURCE_DIR}/tests/modeltest/modeltest.cpp)
     include_directories(${CMAKE_SOURCE_DIR}/tests/modeltest)
 endif()
 
@@ -41,16 +40,7 @@ include_directories(
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 set(SRCS ${SRCS}
-    3rdparty/fancytabwidget.cpp
-    3rdparty/lineedit.cpp
-    3rdparty/processinfo.cpp
-    3rdparty/squeezelabelv1.cpp
-    3rdparty/squeezelabelv2.cpp
-    3rdparty/stylehelper.cpp
-    adblock/adblockaddsubscriptiondialog.cpp
     adblock/adblockurlinterceptor.cpp
-    adblock/adblockdialog.cpp
-    adblock/adblockicon.cpp
     adblock/adblockmanager.cpp
     adblock/adblockmatcher.cpp
     adblock/adblocknetworkrequest.cpp
@@ -59,237 +49,55 @@ set(SRCS ${SRCS}
     adblock/adblockscripts.cpp
     adblock/adblocksearchtree.cpp
     adblock/adblocksubscription.cpp
-    adblock/adblocktreemodel.cpp
-    adblock/adblocktreewidget.cpp
     adblock/adblockplugin.cpp
     app/autosaver.cpp
-    app/browserwindow.cpp
     app/commandlineoptions.cpp
     app/datapaths.cpp
     app/mainapplication.cpp
-    app/mainmenu.cpp
     app/profilemanager.cpp
-    app/proxystyle.cpp
     app/qzcommon.cpp
     app/settings.cpp
     autofill/autofill.cpp
-    autofill/autofillicon.cpp
-    autofill/autofillnotification.cpp
-    autofill/autofillwidget.cpp
     autofill/passwordbackends/databaseencryptedpasswordbackend.cpp
     autofill/passwordbackends/databasepasswordbackend.cpp
     autofill/passwordbackends/passwordbackend.cpp
     autofill/passwordmanager.cpp
     bookmarks/bookmarkitem.cpp
     bookmarks/bookmarks.cpp
-    bookmarks/bookmarksexport/bookmarksexportdialog.cpp
-    bookmarks/bookmarksexport/bookmarksexporter.cpp
-    bookmarks/bookmarksexport/htmlexporter.cpp
-    bookmarks/bookmarksicon.cpp
-    bookmarks/bookmarksimport/bookmarksimportdialog.cpp
-    bookmarks/bookmarksimport/bookmarksimporter.cpp
-    bookmarks/bookmarksimport/firefoximporter.cpp
-    bookmarks/bookmarksimport/htmlimporter.cpp
-    bookmarks/bookmarksimport/chromeimporter.cpp
-    bookmarks/bookmarksimport/ieimporter.cpp
-    bookmarks/bookmarksimport/operaimporter.cpp
-    bookmarks/bookmarksitemdelegate.cpp
-    bookmarks/bookmarksmanager.cpp
-    bookmarks/bookmarksmenu.cpp
     bookmarks/bookmarksmodel.cpp
-    bookmarks/bookmarkstoolbarbutton.cpp
-    bookmarks/bookmarkstoolbar.cpp
-    bookmarks/bookmarkstools.cpp
-    bookmarks/bookmarkstreeview.cpp
-    bookmarks/bookmarkswidget.cpp
     cookies/cookiejar.cpp
-    cookies/cookiemanager.cpp
-    downloads/downloaditem.cpp
-    downloads/downloadmanager.cpp
-    downloads/downloadmanagermodel.cpp
-    downloads/downloadoptionsdialog.cpp
-    downloads/downloadsbutton.cpp
     history/history.cpp
     history/historyitem.cpp
-    history/historymanager.cpp
-    history/historymenu.cpp
     history/historymodel.cpp
-    history/historytreeview.cpp
-    navigation/completer/locationcompleter.cpp
-    navigation/completer/locationcompleterdelegate.cpp
-    navigation/completer/locationcompletermodel.cpp
-    navigation/completer/locationcompleterrefreshjob.cpp
-    navigation/completer/locationcompleterview.cpp
-    navigation/downicon.cpp
-    navigation/goicon.cpp
-    navigation/locationbar.cpp
-    navigation/locationbarpopup.cpp
-    navigation/navigationbar.cpp
-    navigation/navigationbartoolbutton.cpp
-    navigation/navigationbarconfigdialog.cpp
-    navigation/navigationcontainer.cpp
-    navigation/reloadstopbutton.cpp
-    navigation/siteicon.cpp
-    navigation/websearchbar.cpp
-    navigation/zoomlabel.cpp
     network/networkmanager.cpp
     network/networkurlinterceptor.cpp
     network/schemehandlers/extensionschemehandler.cpp
     network/schemehandlers/falkonschemehandler.cpp
-    network/sslerrordialog.cpp
-    notifications/desktopnotification.cpp
-    notifications/desktopnotificationsfactory.cpp
-    opensearch/editsearchengine.cpp
     opensearch/opensearchengine.cpp
     opensearch/opensearchenginedelegate.cpp
     opensearch/opensearchreader.cpp
-    opensearch/searchenginesdialog.cpp
     opensearch/searchenginesmanager.cpp
-    other/aboutdialog.cpp
-    other/browsinglibrary.cpp
-    other/clearprivatedata.cpp
-    other/checkboxdialog.cpp
-    other/iconchooser.cpp
-    other/licenseviewer.cpp
     other/qzsettings.cpp
-    other/siteinfo.cpp
-    other/siteinfopermissionitem.cpp
-    other/siteinfowidget.cpp
     other/sitesettingsmanager.cpp
-    other/statusbar.cpp
-    other/updater.cpp
     other/useragentmanager.cpp
-    other/protocolhandlerdialog.cpp
     other/protocolhandlermanager.cpp
     plugins/pluginproxy.cpp
     plugins/plugins.cpp
-    plugins/speeddial.cpp
     plugins/ocssupport.cpp
-    plugins/qml/qmlpluginloader.cpp
-    plugins/qml/qmlplugin.cpp
-    plugins/qml/qmlplugins.cpp
-    plugins/qml/qmlplugininterface.cpp
-    plugins/qml/qmlengine.cpp
-    plugins/qml/qmlstaticdata.cpp
-    plugins/qml/api/bookmarks/qmlbookmarktreenode.cpp
-    plugins/qml/api/bookmarks/qmlbookmarks.cpp
-    plugins/qml/api/topsites/qmlmostvisitedurl.cpp
-    plugins/qml/api/topsites/qmltopsites.cpp
-    plugins/qml/api/history/qmlhistoryitem.cpp
-    plugins/qml/api/history/qmlhistory.cpp
-    plugins/qml/api/cookies/qmlcookie.cpp
-    plugins/qml/api/cookies/qmlcookies.cpp
-    plugins/qml/api/tabs/qmltab.cpp
-    plugins/qml/api/tabs/qmltabs.cpp
-    plugins/qml/api/notifications/qmlnotifications.cpp
-    plugins/qml/api/clipboard/qmlclipboard.cpp
-    plugins/qml/api/windows/qmlwindow.cpp
-    plugins/qml/api/windows/qmlwindows.cpp
-    plugins/qml/api/browseraction/qmlbrowseraction.cpp
-    plugins/qml/api/sidebar/qmlsidebar.cpp
-    plugins/qml/api/menus/qmlmenu.cpp
-    plugins/qml/api/menus/qmlaction.cpp
-    plugins/qml/api/menus/qmlwebhittestresult.cpp
-    plugins/qml/api/settings/qmlsettings.cpp
-    plugins/qml/api/events/qmlqzobjects.cpp
-    plugins/qml/api/events/qmlmouseevent.cpp
-    plugins/qml/api/events/qmlwheelevent.cpp
-    plugins/qml/api/events/qmlkeyevent.cpp
-    plugins/qml/api/userscript/qmluserscript.cpp
-    plugins/qml/api/userscript/qmluserscripts.cpp
-    plugins/qml/api/userscript/qmlexternaljsobject.cpp
-    plugins/qml/api/extensionscheme/qmlextensionscheme.cpp
-    plugins/qml/api/extensionscheme/qmlwebengineurlrequestjob.cpp
-    plugins/qml/api/fileutils/qmlfileutils.cpp
-    plugins/qml/api/qmlenums.cpp
-    popupwindow/popuplocationbar.cpp
-    popupwindow/popupstatusbarmessage.cpp
-    popupwindow/popupwebview.cpp
-    popupwindow/popupwindow.cpp
     preferences/acceptlanguage.cpp
-    preferences/autofillmanager.cpp
-    preferences/autoopenprotocolsdialog.cpp
-    preferences/certificatemanager.cpp
-    preferences/jsoptions.cpp
-    preferences/pluginlistdelegate.cpp
-    preferences/pluginsmanager.cpp
-    preferences/preferences.cpp
-    preferences/schememanager.cpp
-    preferences/sitesettingsattributesitem.cpp
-    preferences/sitesettingsbrowsedialog.cpp
-    preferences/sitesettingshtml5item.cpp
-    preferences/thememanager.cpp
-    preferences/useragentdialog.cpp
-    session/recoveryjsobject.cpp
-    session/restoremanager.cpp
-    session/sessionmanager.cpp
-    session/sessionmanagerdialog.cpp
-    sidebar/bookmarkssidebar.cpp
-    sidebar/historysidebar.cpp
-    sidebar/sidebar.cpp
-    tabwidget/combotabbar.cpp
-    tabwidget/tabbar.cpp
-    tabwidget/tabicon.cpp
-    tabwidget/tabmodel.cpp
-    tabwidget/tabmrumodel.cpp
-    tabwidget/tabtreemodel.cpp
-    tabwidget/tabstackedwidget.cpp
-    tabwidget/tabwidget.cpp
-    tabwidget/tabcontextmenu.cpp
-    tools/abstractbuttoninterface.cpp
     tools/aesinterface.cpp
-    tools/animatedwidget.cpp
-    tools/buttonwithmenu.cpp
-    tools/certificateinfowidget.cpp
-    tools/clickablelabel.cpp
-    tools/closedtabsmanager.cpp
-    tools/closedwindowsmanager.cpp
-    tools/colors.cpp
     tools/delayedfilewatcher.cpp
     tools/desktopfile.cpp
-    tools/docktitlebarwidget.cpp
-    tools/enhancedmenu.cpp
-    tools/focusselectlineedit.cpp
-    tools/headerview.cpp
-    tools/horizontallistwidget.cpp
-    tools/html5permissions/html5permissionsmanager.cpp
-    tools/html5permissions/html5permissionsnotification.cpp
     tools/iconprovider.cpp
-    tools/listitemdelegate.cpp
-    tools/mactoolbutton.cpp
-    tools/menubar.cpp
-    tools/pagethumbnailer.cpp
-    tools/progressbar.cpp
     tools/qztools.cpp
-    tools/removeitemfocusdelegate.cpp
     tools/scripts.cpp
     tools/sqldatabase.cpp
-    tools/toolbutton.cpp
-    tools/treewidget.cpp
-    tools/wheelhelper.cpp
     webengine/javascript/autofilljsobject.cpp
     webengine/javascript/externaljsobject.cpp
     webengine/loadrequest.cpp
-    webengine/webhittestresult.cpp
-    webengine/webinspector.cpp
     webengine/webpage.cpp
-    webengine/webview.cpp
-    webengine/webscrollbar.cpp
-    webengine/webscrollbarmanager.cpp
-    webtab/searchtoolbar.cpp
-    webtab/tabbedwebview.cpp
-    webtab/webtab.cpp
 
-    3rdparty/fancytabwidget.h
-    3rdparty/lineedit.h
-    3rdparty/processinfo.h
-    3rdparty/squeezelabelv1.h
-    3rdparty/squeezelabelv2.h
-    3rdparty/stylehelper.h
-    adblock/adblockaddsubscriptiondialog.h
     adblock/adblockurlinterceptor.h
-    adblock/adblockdialog.h
-    adblock/adblockicon.h
     adblock/adblockmanager.h
     adblock/adblockmatcher.h
     adblock/adblocknetworkrequest.h
@@ -298,237 +106,62 @@ set(SRCS ${SRCS}
     adblock/adblockscripts.h
     adblock/adblocksearchtree.h
     adblock/adblocksubscription.h
-    adblock/adblocktreemodel.h
-    adblock/adblocktreewidget.h
     adblock/adblockplugin.h
     app/autosaver.h
-    app/browserwindow.h
     app/commandlineoptions.h
     app/datapaths.h
     app/mainapplication.h
-    app/mainmenu.h
     app/profilemanager.h
-    app/proxystyle.h
     app/qzcommon.h
     app/settings.h
     autofill/autofill.h
-    autofill/autofillicon.h
-    autofill/autofillnotification.h
-    autofill/autofillwidget.h
     autofill/passwordbackends/databaseencryptedpasswordbackend.h
     autofill/passwordbackends/databasepasswordbackend.h
     autofill/passwordbackends/passwordbackend.h
     autofill/passwordmanager.h
     bookmarks/bookmarkitem.h
     bookmarks/bookmarks.h
-    bookmarks/bookmarksexport/bookmarksexportdialog.h
-    bookmarks/bookmarksexport/bookmarksexporter.h
-    bookmarks/bookmarksexport/htmlexporter.h
-    bookmarks/bookmarksicon.h
-    bookmarks/bookmarksimport/bookmarksimportdialog.h
-    bookmarks/bookmarksimport/bookmarksimporter.h
-    bookmarks/bookmarksimport/firefoximporter.h
-    bookmarks/bookmarksimport/htmlimporter.h
-    bookmarks/bookmarksimport/chromeimporter.h
-    bookmarks/bookmarksimport/ieimporter.h
-    bookmarks/bookmarksimport/operaimporter.h
-    bookmarks/bookmarksitemdelegate.h
-    bookmarks/bookmarksmanager.h
-    bookmarks/bookmarksmenu.h
     bookmarks/bookmarksmodel.h
-    bookmarks/bookmarkstoolbarbutton.h
-    bookmarks/bookmarkstoolbar.h
-    bookmarks/bookmarkstools.h
-    bookmarks/bookmarkstreeview.h
-    bookmarks/bookmarkswidget.h
     cookies/cookiejar.h
-    cookies/cookiemanager.h
-    downloads/downloaditem.h
-    downloads/downloadmanager.h
-    downloads/downloadmanagermodel.h
-    downloads/downloadoptionsdialog.h
-    downloads/downloadsbutton.h
     history/history.h
     history/historyitem.h
-    history/historymanager.h
-    history/historymenu.h
     history/historymodel.h
-    history/historytreeview.h
-    navigation/completer/locationcompleter.h
-    navigation/completer/locationcompleterdelegate.h
-    navigation/completer/locationcompletermodel.h
-    navigation/completer/locationcompleterrefreshjob.h
-    navigation/completer/locationcompleterview.h
-    navigation/downicon.h
-    navigation/goicon.h
-    navigation/locationbar.h
-    navigation/locationbarpopup.h
-    navigation/navigationbar.h
-    navigation/navigationbartoolbutton.h
-    navigation/navigationbarconfigdialog.h
-    navigation/navigationcontainer.h
-    navigation/reloadstopbutton.h
-    navigation/siteicon.h
-    navigation/websearchbar.h
-    navigation/zoomlabel.h
     network/networkmanager.h
     network/networkurlinterceptor.h
     network/schemehandlers/extensionschemehandler.h
     network/schemehandlers/falkonschemehandler.h
-    network/sslerrordialog.h
-    notifications/desktopnotification.h
-    notifications/desktopnotificationsfactory.h
-    opensearch/editsearchengine.h
     opensearch/opensearchengine.h
     opensearch/opensearchenginedelegate.h
     opensearch/opensearchreader.h
-    opensearch/searchenginesdialog.h
     opensearch/searchenginesmanager.h
-    other/aboutdialog.h
-    other/browsinglibrary.h
-    other/clearprivatedata.h
-    other/checkboxdialog.h
-    other/iconchooser.h
-    other/licenseviewer.h
     other/qzsettings.h
-    other/siteinfo.h
-    other/siteinfopermissionitem.h
-    other/siteinfowidget.h
     other/sitesettingsmanager.h
-    other/statusbar.h
-    other/updater.h
     other/useragentmanager.h
-    other/protocolhandlerdialog.h
     other/protocolhandlermanager.h
     plugins/pluginproxy.h
     plugins/plugins.h
-    plugins/speeddial.h
     plugins/ocssupport.h
-    plugins/qml/qmlpluginloader.h
-    plugins/qml/qmlplugin.h
-    plugins/qml/qmlplugins.h
-    plugins/qml/qmlplugininterface.h
-    plugins/qml/qmlengine.h
-    plugins/qml/qmlstaticdata.h
-    plugins/qml/api/bookmarks/qmlbookmarktreenode.h
-    plugins/qml/api/bookmarks/qmlbookmarks.h
-    plugins/qml/api/topsites/qmlmostvisitedurl.h
-    plugins/qml/api/topsites/qmltopsites.h
-    plugins/qml/api/history/qmlhistoryitem.h
-    plugins/qml/api/history/qmlhistory.h
-    plugins/qml/api/cookies/qmlcookie.h
-    plugins/qml/api/cookies/qmlcookies.h
-    plugins/qml/api/tabs/qmltab.h
-    plugins/qml/api/tabs/qmltabs.h
-    plugins/qml/api/notifications/qmlnotifications.h
-    plugins/qml/api/clipboard/qmlclipboard.h
-    plugins/qml/api/windows/qmlwindow.h
-    plugins/qml/api/windows/qmlwindows.h
-    plugins/qml/api/browseraction/qmlbrowseraction.h
-    plugins/qml/api/sidebar/qmlsidebar.h
-    plugins/qml/api/menus/qmlmenu.h
-    plugins/qml/api/menus/qmlaction.h
-    plugins/qml/api/menus/qmlwebhittestresult.h
-    plugins/qml/api/settings/qmlsettings.h
-    plugins/qml/api/events/qmlqzobjects.h
-    plugins/qml/api/events/qmlmouseevent.h
-    plugins/qml/api/events/qmlwheelevent.h
-    plugins/qml/api/events/qmlkeyevent.h
-    plugins/qml/api/userscript/qmluserscript.h
-    plugins/qml/api/userscript/qmluserscripts.h
-    plugins/qml/api/userscript/qmlexternaljsobject.h
-    plugins/qml/api/extensionscheme/qmlextensionscheme.h
-    plugins/qml/api/extensionscheme/qmlwebengineurlrequestjob.h
-    plugins/qml/api/fileutils/qmlfileutils.h
-    plugins/qml/api/qmlenums.h
-    popupwindow/popuplocationbar.h
-    popupwindow/popupstatusbarmessage.h
-    popupwindow/popupwebview.h
-    popupwindow/popupwindow.h
     preferences/acceptlanguage.h
-    preferences/autofillmanager.h
-    preferences/autoopenprotocolsdialog.h
-    preferences/certificatemanager.h
-    preferences/jsoptions.h
-    preferences/pluginlistdelegate.h
-    preferences/pluginsmanager.h
-    preferences/preferences.h
-    preferences/schememanager.h
-    preferences/sitesettingsattributesitem.h
-    preferences/sitesettingsbrowsedialog.h
-    preferences/sitesettingshtml5item.h
-    preferences/thememanager.h
-    preferences/useragentdialog.h
-    session/recoveryjsobject.h
-    session/restoremanager.h
-    session/sessionmanager.h
-    session/sessionmanagerdialog.h
-    sidebar/bookmarkssidebar.h
-    sidebar/historysidebar.h
-    sidebar/sidebar.h
-    tabwidget/combotabbar.h
-    tabwidget/tabbar.h
-    tabwidget/tabicon.h
-    tabwidget/tabmodel.h
-    tabwidget/tabmrumodel.h
-    tabwidget/tabtreemodel.h
-    tabwidget/tabstackedwidget.h
-    tabwidget/tabwidget.h
-    tabwidget/tabcontextmenu.h
-    tools/abstractbuttoninterface.h
     tools/aesinterface.h
-    tools/animatedwidget.h
-    tools/buttonwithmenu.h
-    tools/certificateinfowidget.h
-    tools/clickablelabel.h
-    tools/closedtabsmanager.h
-    tools/closedwindowsmanager.h
-    tools/colors.h
     tools/delayedfilewatcher.h
     tools/desktopfile.h
-    tools/docktitlebarwidget.h
-    tools/enhancedmenu.h
-    tools/focusselectlineedit.h
-    tools/headerview.h
-    tools/horizontallistwidget.h
-    tools/html5permissions/html5permissionsmanager.h
-    tools/html5permissions/html5permissionsnotification.h
     tools/iconprovider.h
-    tools/listitemdelegate.h
-    tools/mactoolbutton.h
-    tools/menubar.h
-    tools/pagethumbnailer.h
-    tools/progressbar.h
     tools/qztools.h
-    tools/removeitemfocusdelegate.h
     tools/scripts.h
     tools/sqldatabase.h
-    tools/toolbutton.h
-    tools/treewidget.h
-    tools/wheelhelper.h
     webengine/javascript/autofilljsobject.h
     webengine/javascript/externaljsobject.h
     webengine/loadrequest.h
-    webengine/webhittestresult.h
-    webengine/webinspector.h
     webengine/webpage.h
-    webengine/webview.h
-    webengine/webscrollbar.h
-    webengine/webscrollbarmanager.h
-    webtab/searchtoolbar.h
-    webtab/tabbedwebview.h
-    webtab/webtab.h
 )
 
 # add the logging category for FALKON
 ecm_qt_declare_logging_category(LOGGING_SRCS HEADER falkon_private_debug.h IDENTIFIER "FALKON_PRIVATE_LOG" CATEGORY_NAME "org.kde.falkon")
 
 if (HAVE_LIBINTL)
-    set(SRCS ${SRCS} plugins/qml/api/i18n/qmli18n.cpp plugins/qml/api/i18n/qmli18n.h)
 endif()
 
 if (WIN32)
-    set(SRCS ${SRCS} other/registerqappassociation.cpp other/registerqappassociation.h)
 endif()
 if (APPLE)
     set(SRCS ${SRCS} tools/disablewindowtabbbing.mm)
@@ -536,57 +169,6 @@ endif()
 
 # TODO: use ki18n_wrap_ui?
 qt_wrap_ui(SRCS
-    adblock/adblockaddsubscriptiondialog.ui
-    adblock/adblockdialog.ui
-    autofill/autofillnotification.ui
-    autofill/autofillwidget.ui
-    autofill/passwordbackends/masterpassworddialog.ui
-    bookmarks/bookmarksexport/bookmarksexportdialog.ui
-    bookmarks/bookmarksimport/bookmarksimportdialog.ui
-    bookmarks/bookmarksmanager.ui
-    bookmarks/bookmarkswidget.ui
-    cookies/cookiemanager.ui
-    downloads/downloaditem.ui
-    downloads/downloadmanager.ui
-    downloads/downloadoptionsdialog.ui
-    history/historymanager.ui
-    navigation/navigationbarconfigdialog.ui
-    network/sslerrordialog.ui
-    notifications/desktopnotification.ui
-    opensearch/editsearchengine.ui
-    opensearch/searchenginesdialog.ui
-    other/aboutdialog.ui
-    other/browsinglibrary.ui
-    other/clearprivatedata.ui
-    other/iconchooser.ui
-    other/protocolhandlerdialog.ui
-    other/siteinfo.ui
-    other/siteinfopermissionitem.ui
-    other/siteinfowidget.ui
-    preferences/acceptlanguage.ui
-    preferences/addacceptlanguage.ui
-    preferences/autofillmanager.ui
-    preferences/autoopenprotocolsdialog.ui
-    preferences/certificatemanager.ui
-    preferences/jsoptions.ui
-    preferences/pluginslist.ui
-    preferences/preferences.ui
-    preferences/schememanager.ui
-    preferences/sitesettingsattributesitem.ui
-    preferences/sitesettingsbrowsedialog.ui
-    preferences/sitesettingshtml5item.ui
-    preferences/thememanager.ui
-    preferences/useragentdialog.ui
-    session/sessionmanagerdialog.ui
-    sidebar/bookmarkssidebar.ui
-    sidebar/historysidebar.ui
-    tools/certificateinfowidget.ui
-    tools/docktitlebarwidget.ui
-    tools/html5permissions/html5permissionsnotification.ui
-    webengine/jsalert.ui
-    webengine/jsconfirm.ui
-    webengine/jsprompt.ui
-    webtab/searchtoolbar.ui
 )
 
 qt_add_resources(SRCS

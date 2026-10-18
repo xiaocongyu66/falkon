@@ -17,12 +17,10 @@
 * ============================================================ */
 #include "history.h"
 #include "historymodel.h"
-#include "browserwindow.h"
 #include "iconprovider.h"
 #include "settings.h"
 #include "mainapplication.h"
 #include "sqldatabase.h"
-#include "webview.h"
 #include "qzsettings.h"
 
 #include <QWebEngineProfile>

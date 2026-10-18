@@ -20,7 +20,6 @@
 #include "networkmanager.h"
 #include "sqldatabase.h"
 #include "autosaver.h"
-#include "webview.h"
 #include "qztools.h"
 
 #include <QTimer>

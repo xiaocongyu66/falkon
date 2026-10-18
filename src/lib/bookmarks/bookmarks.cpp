@@ -18,7 +18,6 @@
 #include "bookmarks.h"
 #include "bookmarkitem.h"
 #include "bookmarksmodel.h"
-#include "bookmarkstools.h"
 #include "autosaver.h"
 #include "datapaths.h"
 #include "settings.h"

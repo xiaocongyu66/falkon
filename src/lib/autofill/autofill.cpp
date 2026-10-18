@@ -19,7 +19,6 @@
 #include "webpage.h"
 #include "sqldatabase.h"
 #include "mainapplication.h"
-#include "autofillnotification.h"
 #include "settings.h"
 #include "passwordmanager.h"
 #include "qztools.h"

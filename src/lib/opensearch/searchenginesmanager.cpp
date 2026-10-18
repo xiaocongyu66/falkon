@@ -16,15 +16,12 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "searchenginesmanager.h"
-#include "searchenginesdialog.h"
-#include "editsearchengine.h"
 #include "networkmanager.h"
 #include "iconprovider.h"
 #include "mainapplication.h"
 #include "opensearchreader.h"
 #include "settings.h"
 #include "qzsettings.h"
-#include "webview.h"
 #include "sqldatabase.h"
 
 #include <QNetworkReply>

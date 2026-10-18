@@ -20,7 +20,6 @@
 #include "datapaths.h"
 #include "networkmanager.h"
 #include "desktopfile.h"
-#include "desktopnotificationsfactory.h"
 #include "mainapplication.h"
 
 #include <QDir>

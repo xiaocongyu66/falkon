@@ -27,7 +27,6 @@
 //#define BOOKMARKSMODEL_DEBUG
 
 #ifdef BOOKMARKSMODEL_DEBUG
-#include "modeltest.h"
 #endif
 
 BookmarksModel::BookmarksModel(BookmarkItem* root, Bookmarks* bookmarks, QObject* parent)

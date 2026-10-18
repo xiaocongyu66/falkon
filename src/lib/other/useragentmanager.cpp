@@ -16,7 +16,6 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "useragentmanager.h"
-#include "browserwindow.h"
 #include "qztools.h"
 #include "settings.h"
 #include "mainapplication.h"

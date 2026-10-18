@@ -404,10 +404,11 @@ MainApplication::MainApplication(int &argc, char** argv)
     if (!noAddons)
         m_plugins->loadPlugins();
 
+    BrowserWindow *window = nullptr;
     if (m_headlessRequested) {
         QTimer::singleShot(0, this, &MainApplication::runHeadlessRender);
     } else {
-        BrowserWindow *window = createWindow(Qz::BW_FirstAppWindow, std::move(startUrls));
+        window = createWindow(Qz::BW_FirstAppWindow, std::move(startUrls));
         connect(window, SIGNAL(startingCompleted()), this, SLOT(restoreOverrideCursor()));
 
         connect(this, &QApplication::focusChanged, this, &MainApplication::onFocusChanged);
@@ -1413,7 +1414,7 @@ void MainApplication::runHeadlessRender()
 {
     // Re-parse local headless parameters (main parser belongs to CommandLineOptions)
     QCommandLineParser parser;
-    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseLongOptions);
+    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
     const QCommandLineOption outOpt(QSL("headless-output"), QSL("Output file"), QSL("file"), QSL("out.png"));
     const QCommandLineOption wOpt(QSL("headless-width"), QSL("Viewport width"), QSL("px"), QSL("800"));
     const QCommandLineOption hOpt(QSL("headless-height"), QSL("Viewport height"), QSL("px"), QSL("600"));
@@ -1440,7 +1441,7 @@ void MainApplication::runHeadlessRender()
     timeoutTimer.setSingleShot(true);
     bool done = false;
 
-    std::function<void()> finish = [&](int code) {
+    std::function<void(int)> finish = [&](int code) {
         if (done) {
             return;
         }

@@ -19,6 +19,7 @@
 #define WEBPAGE_H
 
 #include <QWebEnginePage>
+#include <QWebEngineFullScreenRequest>
 #include <QWebEngineScript>
 #include <QVector>
 #include <QElapsedTimer>

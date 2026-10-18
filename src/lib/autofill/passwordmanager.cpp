@@ -220,5 +220,4 @@ void PasswordManager::ensureLoaded()
 PasswordManager::~PasswordManager()
 {
     delete m_databaseBackend;
-    delete m_databaseEncryptedBackend;
 }

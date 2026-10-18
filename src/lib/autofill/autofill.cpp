@@ -203,15 +203,12 @@ void AutoFill::saveForm(WebPage *page, const QUrl &frameUrl, const PageFormData 
         }
     }
 
-    if (m_lastNotification && m_lastNotificationPage == page) {
-        m_lastNotification->close();
+    // Headless build: no notification bar; store without asking.
+    PageFormData store = updateData;
+    if (store.data.isEmpty() && !isStored(frameUrl)) {
+        store = formData;
     }
-
-    auto* aWidget = new AutoFillNotification(frameUrl, formData, updateData);
-    page->view()->addNotification(aWidget);
-
-    m_lastNotification = aWidget;
-    m_lastNotificationPage = page;
+    addEntry(frameUrl, store);
 }
 
 // Returns all saved passwords on this page

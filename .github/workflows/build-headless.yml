@@ -36,7 +36,7 @@ jobs:
           QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --single-process"
           QT_QPA_PLATFORM: "offscreen"
         run: |
-          FALCON_BIN=$(find build -type f -name falcon -perm -u+x | head -1)
+          FALCON_BIN=$(find build -type f -name falkon -perm -u+x | head -1)
           if [ -z "$FALCON_BIN" ]; then
             echo "falcon binary not found, candidates:"
             find build -type f \( -name 'falcon*' -o -name 'run.sh' \) | head -20
@@ -57,6 +57,6 @@ jobs:
         with:
           name: falkon-headless-build
           path: |
-            build/**/falcon
+            build/**/falkon
             smoke.png
           if-no-files-found: error

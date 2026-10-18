@@ -887,7 +887,7 @@ void QzTools::setWmClass(const QString &name, const QWidget* widget)
     }
 
     const QByteArray nameData = name.toUtf8();
-    const QByteArray classData = mApp->wmClass().isEmpty() ? QByteArrayLiteral("Falkon") : mApp->wmClass();
+    const QByteArray classData = QByteArrayLiteral("Falkon");
 
     uint32_t class_len = nameData.length() + 1 + classData.length() + 1;
     char *class_hint = (char*) malloc(class_len);

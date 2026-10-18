@@ -31,7 +31,6 @@
 
 class QIcon;
 
-class WebView;
 class AutoSaver;
 
 // Needs to be QWidget subclass, otherwise qproperty- setting won't work
@@ -43,7 +42,6 @@ class FALKON_EXPORT IconProvider : public QWidget
 public:
     explicit IconProvider();
 
-    void saveIcon(WebView* view);
 
     QIcon bookmarkIcon() const;
     void setBookmarkIcon(const QIcon &icon);

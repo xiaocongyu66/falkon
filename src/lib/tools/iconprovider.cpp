@@ -41,45 +41,6 @@ IconProvider::IconProvider()
     connect(m_autoSaver, &AutoSaver::save, this, &IconProvider::saveIconsToDatabase);
 }
 
-void IconProvider::saveIcon(WebView* view)
-{
-    // Don't save icons in private mode.
-    if (mApp->isPrivate()) {
-        return;
-    }
-
-    const QIcon icon = view->icon(true);
-    if (icon.isNull()) {
-        return;
-    }
-
-    const QStringList ignoredSchemes = {
-        QStringLiteral("falkon"),
-        QStringLiteral("ftp"),
-        QStringLiteral("file"),
-        QStringLiteral("view-source"),
-        QStringLiteral("data"),
-        QStringLiteral("about")
-    };
-
-    if (ignoredSchemes.contains(view->url().scheme())) {
-        return;
-    }
-
-    for (int i = 0; i < m_iconBuffer.size(); ++i) {
-        if (m_iconBuffer[i].first == view->url()) {
-            m_iconBuffer.removeAt(i);
-            break;
-        }
-    }
-
-    BufferedIcon item;
-    item.first = view->url();
-    item.second = icon.pixmap(16).toImage();
-
-    m_autoSaver->changeOccurred();
-    m_iconBuffer.append(item);
-}
 
 QIcon IconProvider::bookmarkIcon() const
 {

@@ -45,7 +45,7 @@ void QzSettings::loadSettings()
     settings.endGroup();
 
     settings.beginGroup(QSL("Web-Browser-Settings"));
-    defaultZoomLevel = settings.value(QSL("DefaultZoomLevel"), WebView::zoomLevels().indexOf(100)).toInt();
+    defaultZoomLevel = settings.value(QSL("DefaultZoomLevel"), 18).toInt();
     loadTabsOnActivation = settings.value(QSL("LoadTabsOnActivation"), true).toBool();
     autoOpenProtocols.clear();
     autoOpenProtocols = settings.value(QSL("AutomaticallyOpenProtocols"), QStringList()).toStringList();

@@ -28,7 +28,6 @@
 
 class QWebElement;
 
-class WebView;
 class LoadRequest;
 
 class FALKON_EXPORT SearchEnginesManager : public QObject
@@ -66,7 +65,7 @@ public:
     void addEngine(OpenSearchEngine* engine);
     void addEngine(const Engine &engine);
 
-    void addEngineFromForm(const QVariantMap &formData, WebView *view);
+    void addEngineFromForm(const QVariantMap &formData);
 
     void removeEngine(const Engine &engine);
 

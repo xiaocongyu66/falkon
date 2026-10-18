@@ -16,6 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "searchenginesmanager.h"
+#include "loadrequest.h"
 #include "networkmanager.h"
 #include "iconprovider.h"
 #include "mainapplication.h"
@@ -249,87 +250,10 @@ void SearchEnginesManager::addEngine(const Engine &engine)
     Q_EMIT enginesChanged();
 }
 
-void SearchEnginesManager::addEngineFromForm(const QVariantMap &formData, WebView *view)
+void SearchEnginesManager::addEngineFromForm(const QVariantMap &formData)
 {
-    if (formData.isEmpty())
-        return;
-
-    const QString method = formData.value(QSL("method")).toString();
-    bool isPost = method == QL1S("post");
-
-    QUrl actionUrl = formData.value(QSL("action")).toUrl();
-
-    if (actionUrl.isRelative()) {
-        actionUrl = view->url().resolved(actionUrl);
-    }
-
-    QUrl parameterUrl = actionUrl;
-
-    if (isPost) {
-        parameterUrl = QUrl(QSL("http://foo.bar"));
-    }
-
-    const QString &inputName = formData.value(QSL("inputName")).toString();
-
-    QUrlQuery query(parameterUrl);
-    query.addQueryItem(inputName, QSL("SEARCH"));
-
-    const QVariantList &inputs = formData.value(QSL("inputs")).toList();
-    for (const QVariant &pair : inputs) {
-        const QVariantList &list = pair.toList();
-        if (list.size() != 2)
-            continue;
-
-        const QString &name = list.at(0).toString();
-        const QString &value = list.at(1).toString();
-
-        if (name == inputName || name.isEmpty() || value.isEmpty())
-            continue;
-
-        query.addQueryItem(name, value);
-    }
-
-    parameterUrl.setQuery(query);
-
-    if (!isPost) {
-        actionUrl = parameterUrl;
-    }
-
-    SearchEngine engine;
-    engine.name = view->title();
-    engine.icon = view->icon();
-    engine.url = QString::fromUtf8(actionUrl.toEncoded());
-
-    if (isPost) {
-        QByteArray data = parameterUrl.toEncoded(QUrl::RemoveScheme);
-        engine.postData = data.contains('?') ? data.mid(data.lastIndexOf('?') + 1) : QByteArray();
-        engine.postData.replace((inputName + QL1S("=SEARCH")).toUtf8(), (inputName + QL1S("=%s")).toUtf8());
-    } else {
-        engine.url.replace(inputName + QL1S("=SEARCH"), inputName + QL1S("=%s"));
-    }
-
-    EditSearchEngine dialog(SearchEnginesDialog::tr("Add Search Engine"), view);
-    dialog.setName(engine.name);
-    dialog.setIcon(engine.icon);
-    dialog.setUrl(engine.url);
-    dialog.setPostData(QString::fromUtf8(engine.postData));
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
-
-    engine.name = dialog.name();
-    engine.icon = dialog.icon();
-    engine.url = dialog.url();
-    engine.shortcut = dialog.shortcut();
-    engine.suggestionsUrl = dialog.suggestionsUrl();
-    engine.postData = dialog.postData().toUtf8();
-
-    if (engine.name.isEmpty() || engine.url.isEmpty()) {
-        return;
-    }
-
-    addEngine(engine);
+    // Headless build: adding search engines from page UI is not supported.
+    Q_UNUSED(formData)
 }
 
 void SearchEnginesManager::addEngine(OpenSearchEngine* engine)

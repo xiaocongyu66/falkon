@@ -63,10 +63,8 @@ PasswordManager::PasswordManager(QObject* parent)
     , m_loaded(false)
     , m_backend(nullptr)
     , m_databaseBackend(new DatabasePasswordBackend)
-    , m_databaseEncryptedBackend(new DatabaseEncryptedPasswordBackend)
 {
     m_backends[QSL("database")] = m_databaseBackend;
-    m_backends[QSL("database-encrypted")] = m_databaseEncryptedBackend;
 }
 
 void PasswordManager::loadSettings()

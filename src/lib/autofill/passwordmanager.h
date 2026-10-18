@@ -26,7 +26,6 @@
 
 class PasswordBackend;
 class DatabasePasswordBackend;
-class DatabaseEncryptedPasswordBackend;
 
 struct FALKON_EXPORT PasswordEntry {
     QVariant id;
@@ -91,7 +90,6 @@ private:
 
     PasswordBackend* m_backend;
     DatabasePasswordBackend* m_databaseBackend;
-    DatabaseEncryptedPasswordBackend* m_databaseEncryptedBackend;
 
     QHash<QString, PasswordBackend*> m_backends;
 

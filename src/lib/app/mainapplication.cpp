@@ -301,6 +301,11 @@ bool MainApplication::isPortable() const
 #endif
 }
 
+void MainApplication::reloadUserStyleSheet()
+{
+    setUserStyleSheet(QString());
+}
+
 void MainApplication::reloadSettings()
 {
     loadSettings();

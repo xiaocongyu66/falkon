@@ -52,7 +52,28 @@ jobs:
             --headless-width 800 --headless-height 400 \
             --headless-timeout 60000 || true
           test -s smoke.png
-          file smoke.png
+          # 校验 grab 结果非全透明（像素含不透明分量才算渲染成功）
+          python3 - <<'PY'
+import struct, zlib, sys
+d = open('smoke.png','rb').read()
+w, h = struct.unpack('>II', d[16:24])
+chunks, i = [], 8
+while i < len(d):
+    ln, typ = struct.unpack('>I4s', d[i:i+8])
+    if typ == b'IDAT':
+        chunks.append(d[i+8:i+8+ln])
+    i += 12 + ln
+raw = zlib.decompress(b''.join(chunks))
+stride = w*4+1
+opaque = 0
+for row in range(h):
+    line = raw[row*stride+1: row*stride+w*4+1]
+    for px in range(3, len(line), 4):
+        if line[px] != 0:
+            opaque += 1
+print(f'{w}x{h}, opaque pixels: {opaque}')
+sys.exit(0 if opaque > w*h//100 else 1)
+PY
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

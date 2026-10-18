@@ -691,6 +691,9 @@ void MainApplication::runHeadlessRender()
     auto *page = new WebPage(view);
     view->setPage(page);
     view->resize(width, height);
+    // offscreen 合成不画背景：显式给页面底色，否则 grab 出全透明位图
+    page->setBackgroundColor(Qt::white);
+    view->setAttribute(Qt::WA_TranslucentBackground, false);
 
     QEventLoop loop;
     QTimer timeoutTimer;

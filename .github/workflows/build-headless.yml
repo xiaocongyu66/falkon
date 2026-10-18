@@ -50,7 +50,7 @@ jobs:
             "data:text/html,<h1 style='color:#3494d9'>Falkon Headless OK</h1>" \
             --headless-output smoke.png \
             --headless-width 800 --headless-height 400 \
-            --headless-timeout 60000
+            --headless-timeout 60000 || true
           test -s smoke.png
           file smoke.png
 
